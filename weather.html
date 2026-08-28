@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>날씨 · Meridian</title>
+<meta name="description" content="기준 도시의 지금 날씨와 앞으로 12시간, 그리고 다른 도시의 날씨.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#010102">
+<link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="meridian.css">
+</head>
+<body>
+<div id="chrome"></div>
+
+<main id="main">
+  <div class="wrap">
+    <section class="wx-hero" aria-labelledby="condHeading" aria-live="polite">
+      <div class="wx-top">
+        <p class="wx-temp" id="temp"><span class="skeleton">--.-°</span></p>
+        <div>
+          <h1 class="wx-cond" id="condHeading"><span class="skeleton">불러오는 중…</span></h1>
+          <p class="wx-place" id="place">&nbsp;</p>
+        </div>
+        <span class="wx-icon" id="heroIcon"></span>
+      </div>
+      <dl class="wx-facts" id="facts">
+        <div><dt>체감</dt><dd id="fApparent">-</dd></div>
+        <div><dt>습도</dt><dd id="fHumidity">-</dd></div>
+        <div><dt>바람</dt><dd id="fWind">-</dd></div>
+        <div><dt>강수 확률</dt><dd id="fPrecip">-</dd></div>
+        <div><dt>일몰</dt><dd id="fSunset">-</dd></div>
+      </dl>
+      <p class="error" id="heroError" role="alert" hidden></p>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <section class="section" aria-labelledby="hoursHeading">
+      <h2 class="t-headline" id="hoursHeading">앞으로 12시간</h2>
+      <div class="hours" id="hours"></div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <section class="section" aria-labelledby="otherHeading">
+      <h2 class="t-headline" id="otherHeading">다른 도시</h2>
+      <div class="wx-grid" id="grid"></div>
+      <p class="state" id="gridEmpty" hidden>
+        도시가 하나뿐입니다. <a href="index.html">세계시간</a> 에서 도시를 더 넣어 보세요.
+      </p>
+    </section>
+  </div>
+</main>
+
+<div id="pagefoot"></div>
+
+<script src="meridian.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  document.getElementById('chrome').innerHTML = M.nav('날씨');
+  document.getElementById('pagefoot').innerHTML =
+    M.foot('<a href="https://open-meteo.com/">Open-Meteo</a>');
+  $('navActions').innerHTML =
+    '<a class="btn btn-secondary" href="index.html">도시 관리</a>';
+
+  var cities = M.load('cities', M.DEFAULT_CITIES)
+                .filter(function (c) { return M.CITIES[c]; });
+  if (!cities.length) cities = M.DEFAULT_CITIES.slice();
+
+  var lats = cities.map(function (c) { return M.CITIES[c][1]; }).join(',');
+  var lons = cities.map(function (c) { return M.CITIES[c][2]; }).join(',');
+
+  var url = 'https://api.open-meteo.com/v1/forecast' +
+    '?latitude=' + lats + '&longitude=' + lons +
+    '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day' +
+    '&hourly=temperature_2m,weather_code,is_day,precipitation_probability' +
+    '&daily=temperature_2m_max,temperature_2m_min,sunset' +
+    '&forecast_days=2&timezone=auto';
+
+  function skeletonGrid() {
+    $('grid').innerHTML = cities.slice(1).map(function () {
+      return '<div class="wx-card"><div class="row"><div>' +
+        '<div class="nm"><span class="skeleton">도시</span></div>' +
+        '<div class="sub"><span class="skeleton">불러오는 중…</span></div>' +
+        '</div></div><div class="val"><span class="skeleton">--.-°</span></div></div>';
+    }).join('');
+  }
+
+  function fail(msg) {
+    $('heroError').hidden = false;
+    $('heroError').innerHTML = M.escapeHtml(msg) +
+      ' <button type="button" id="retry">다시 시도</button>';
+    $('temp').textContent = '--';
+    $('condHeading').textContent = '날씨를 불러오지 못했습니다';
+    $('place').textContent = '';
+    $('hours').innerHTML = '';
+    $('grid').innerHTML = '';
+    $('retry').addEventListener('click', start);
+  }
+
+  function render(list) {
+    $('heroError').hidden = true;
+
+    /* ----- 기준 도시 ----- */
+    var ref = cities[0], d = list[0], c = d.current;
+    var w = M.describe(c.weather_code);
+    var isDay = c.is_day === 1;
+
+    $('temp').innerHTML = c.temperature_2m.toFixed(1) + '<span class="deg">°</span>';
+    $('condHeading').textContent = w[0];
+    $('place').textContent = ref + ' · ' + M.formatDate(d.timezone, new Date()) + ' ' +
+      (function () { var p = M.tzParts(d.timezone, new Date()); return M.pad2(p.hour) + ':' + M.pad2(p.minute); })();
+    $('heroIcon').innerHTML = M.iconFor(w[1], isDay, 56);
+
+    $('fApparent').textContent = c.apparent_temperature.toFixed(1) + '°';
+    $('fHumidity').textContent = c.relative_humidity_2m + '%';
+    $('fWind').textContent = c.wind_speed_10m.toFixed(1) + ' km/h';
+    $('fSunset').textContent = String(d.daily.sunset[0]).slice(11, 16);
+
+    /* ----- 앞으로 12시간 ----- */
+    var nowIso = c.time.slice(0, 13);
+    var start = d.hourly.time.findIndex(function (t) { return t.slice(0, 13) === nowIso; });
+    if (start < 0) start = 0;
+
+    /* 강수 확률은 '지금 이 시각' 값을 쓴다. 하루 최댓값을 쓰면 맑은 지금과 어긋난다. */
+    var pp = d.hourly.precipitation_probability[start];
+    $('fPrecip').textContent = (pp === null || pp === undefined) ? '자료 없음' : pp + '%';
+
+    var out = '';
+    for (var i = start; i < start + 12 && i < d.hourly.time.length; i++) {
+      var hw = M.describe(d.hourly.weather_code[i]);
+      var hd = d.hourly.is_day[i] === 1;
+      var hh = parseInt(d.hourly.time[i].slice(11, 13), 10);
+      out += '<div class="hour' + (i === start ? ' is-now' : '') + '">' +
+        '<div class="h">' + (i === start ? '지금' : hh + '시') + '</div>' +
+        M.iconFor(hw[1], hd, 22) +
+        '<div class="t">' + d.hourly.temperature_2m[i].toFixed(1) + '°</div>' +
+        '</div>';
+    }
+    $('hours').innerHTML = out;
+
+    /* ----- 다른 도시 (빈 칸 없는 벤토) ----- */
+    var rest = cities.slice(1);
+    if (!rest.length) {
+      $('gridEmpty').hidden = false;
+      $('grid').innerHTML = '';
+      return;
+    }
+    $('gridEmpty').hidden = true;
+    var rem = rest.length % 3;
+    $('grid').innerHTML = rest.map(function (city, i) {
+      var dd = list[i + 1], cc = dd.current, ww = M.describe(cc.weather_code);
+      var p = M.tzParts(dd.timezone, new Date());
+      var span = (i === 0 && rem === 1) ? ' span-3' : (i === 0 && rem === 2) ? ' span-2' : '';
+      return '<article class="wx-card' + span + '">' +
+        '<div class="row">' +
+          '<div>' +
+            '<h3 class="nm">' + M.escapeHtml(city) + '</h3>' +
+            '<p class="sub">' + M.pad2(p.hour) + ':' + M.pad2(p.minute) + ' · ' + ww[0] + '</p>' +
+          '</div>' +
+          M.iconFor(ww[1], cc.is_day === 1, 30) +
+        '</div>' +
+        '<p class="val">' + cc.temperature_2m.toFixed(1) + '°</p>' +
+        '<p class="rng">최고 ' + dd.daily.temperature_2m_max[0].toFixed(1) +
+          '° / 최저 ' + dd.daily.temperature_2m_min[0].toFixed(1) + '°</p>' +
+      '</article>';
+    }).join('');
+  }
+
+  function start() {
+    $('heroError').hidden = true;
+    skeletonGrid();
+    M.getJSON(url)
+      .then(function (data) {
+        var list = Array.isArray(data) ? data : [data];
+        if (list.length < cities.length) throw new Error('응답이 부족합니다');
+        render(list);
+      })
+      .catch(function (e) {
+        fail('날씨를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.');
+      });
+  }
+
+  start();
+  setInterval(start, 15 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

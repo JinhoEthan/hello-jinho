@@ -1,444 +1,276 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>세계시간</title>
+<title>세계시간 · Meridian</title>
+<meta name="description" content="기준 도시의 시각을 중심으로 여러 도시의 지금을 나란히 봅니다.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#010102">
+<link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#ffffff; --ink:#131416; --muted:#8a8f96; --line:#e7e8ea; --tick:#c9ccd0;
-  --accent:#0F7A5A;   /* 딥그린 */
-  --sun:#F5A524; --moon:#7C8AA0; --rain:#2F80C4; --snow:#8AB6DC;
-}
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#0e0f11; --ink:#eceef1; --muted:#868c95; --line:#232629; --tick:#3b4046;
-    --accent:#3FBF8F;
-    --sun:#E9A83A; --moon:#93A2B8; --rain:#5AA3E0; --snow:#9CC4E6;
-  }
-}
-html{color-scheme:light dark}
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  background:var(--bg);color:var(--ink);
-  font-family:"IBM Plex Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  font-weight:300;font-variant-numeric:tabular-nums;line-height:1.45;
-  padding:clamp(28px,7vw,80px) clamp(20px,6vw,40px) 80px;
-}
-.wrap{max-width:560px;margin:0 auto}
-
-/* 헤더 */
-.hello{
-  font-size:clamp(34px,10.5vw,72px);font-weight:600;
-  letter-spacing:-.05em;line-height:1;white-space:nowrap;
-  margin-bottom:clamp(26px,6vw,48px);
-}
-.now{font-size:clamp(46px,14vw,76px);font-weight:300;letter-spacing:-.045em;line-height:1;white-space:nowrap}
-.now .s{font-size:.34em;letter-spacing:-.02em;color:var(--muted)}
-.meta{
-  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
-  margin-top:14px;padding-bottom:26px;font-size:13.5px;color:var(--muted);
-}
-.meta b{font-weight:500;color:var(--ink)}
-
-/* 시간 이동 */
-.shift{border-top:1px solid var(--line);padding:16px 0 18px}
-.shift-head{display:flex;align-items:baseline;gap:12px;font-size:12.5px;color:var(--muted)}
-.shift-head .lb{flex:1}
-.shift-head output{color:var(--ink)}
-.shift-head output.moved{color:var(--accent)}
-.shift-head button{font:inherit;font-size:12.5px;color:var(--accent);background:none;border:none;cursor:pointer}
-.shift-head button[hidden]{display:none}
-.track{position:relative;margin-top:6px}
-.track input{display:block;width:100%;height:22px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;position:relative;z-index:2}
-.track input::-webkit-slider-runnable-track{height:1px;background:var(--line)}
-.track input::-moz-range-track{height:1px;background:var(--line)}
-.track input::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--accent);margin-top:-5px;border:none}
-.track input::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--accent);border:none}
-.ruler{position:relative;height:10px;margin:0 5px}
-.ruler i{position:absolute;top:0;width:1px;height:4px;background:var(--line)}
-.ruler i.mj{height:10px;background:var(--tick)}
-.scale{display:flex;justify-content:space-between;margin:5px 3px 0;font-size:11px;color:var(--muted)}
-.scale span{display:flex;flex-direction:column;gap:1px;text-align:center}
-.scale span em{font-style:normal;color:var(--tick);font-size:10.5px}
-.scale span.on{color:var(--accent)}
-.scale span.on em{color:var(--accent)}
-
-/* 도시 목록 */
-.row{
-  display:flex;align-items:baseline;justify-content:space-between;gap:16px;
-  padding:17px 0;border-top:1px solid var(--line);position:relative;
-  transition:opacity .5s ease;
-}
-.row.night{opacity:.7}
-.nm{display:flex;align-items:center;gap:8px}
-.nm .ph{display:flex;flex:none}
-.name{font-size:16px;font-weight:400;letter-spacing:-.01em}
-.row.ref .name{font-weight:500}
-.sub{font-size:12.5px;color:var(--muted);margin-top:3px;padding-left:24px}
-.t{font-size:27px;font-weight:300;letter-spacing:-.03em;line-height:1.1;white-space:nowrap}
-.right{text-align:right}
-.off{font-size:12.5px;color:var(--muted);margin-top:3px}
-.row.ref .off{color:var(--accent)}
-.del{
-  position:absolute;left:-26px;top:50%;transform:translateY(-50%);
-  width:20px;height:20px;border:none;background:none;cursor:pointer;
-  color:var(--muted);font-size:15px;line-height:1;opacity:0;transition:opacity .15s;
-}
-.row:hover .del,.del:focus-visible{opacity:1}
-.del:hover{color:var(--accent)}
-@media (max-width:640px){
-  .del{left:auto;right:-4px;top:14px;transform:none;opacity:.35}
-  .scale span:nth-child(2),.scale span:nth-child(4){display:none}
-}
-
-/* 추가 */
-.add{margin-top:30px;border-top:1px solid var(--line);padding-top:18px;display:flex;align-items:center;gap:9px}
-.add .ic{color:var(--muted);flex:none}
-.add input{font:inherit;font-size:15px;color:var(--ink);background:none;border:none;width:100%;padding:2px 0}
-.add input::placeholder{color:var(--muted)}
-.add input:focus{outline:none}
-.tools{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;color:var(--tick)}
-.tools button{font:inherit;font-size:12.5px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;white-space:nowrap}
-.tools button:hover{color:var(--accent)}
-.tools button:disabled{color:var(--accent);cursor:default}
-:focus-visible{outline:1px solid var(--accent);outline-offset:3px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="meridian.css">
 </head>
 <body>
+<div id="chrome"></div>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <g id="i-sun" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-   <circle cx="12" cy="12" r="4.2"/>
-   <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/>
-  </g>
-  <g id="i-moon" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-   <path d="M20.2 14.6A8.6 8.6 0 1 1 9.4 3.8a6.9 6.9 0 0 0 10.8 10.8z"/>
-  </g>
-  <g id="i-cloud" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-   <path d="M7.2 18.6h9.9a3.7 3.7 0 0 0 .3-7.4 5.6 5.6 0 0 0-10.8-1.3 3.9 3.9 0 0 0 .6 8.7z"/>
-  </g>
-  <g id="i-partly" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-   <path d="M4.4 10.6a3.6 3.6 0 0 1 3-3.4 4.7 4.7 0 0 1 8.9 1.1 3.1 3.1 0 0 1-.3 6.2H7.7"/>
-   <path d="M9.3 5.2V3.6M4.6 6.9 3.5 5.8M4 11.6H2.4M14.4 6 15.5 4.9M4.4 17.6h7.2"/>
-  </g>
-  <g id="i-rain" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-   <path d="M7.4 15.6h9.7a3.6 3.6 0 0 0 .3-7.2 5.5 5.5 0 0 0-10.6-1.3 3.8 3.8 0 0 0 .6 8.5z"/>
-   <path d="M9 18.4l-.9 2.3M13 18.4l-.9 2.3M17 18.4l-.9 2.3"/>
-  </g>
-  <g id="i-snow" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-   <path d="M7.4 15.2h9.7a3.6 3.6 0 0 0 .3-7.2A5.5 5.5 0 0 0 6.8 6.7a3.8 3.8 0 0 0 .6 8.5z"/>
-   <path d="M9.4 18.4v2.4M8.2 19.6h2.4M15.2 18.4v2.4M14 19.6h2.4"/>
-  </g>
-  <g id="i-storm" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-   <path d="M7.4 14.8h9.7a3.6 3.6 0 0 0 .3-7.2A5.5 5.5 0 0 0 6.8 6.3a3.8 3.8 0 0 0 .6 8.5z"/>
-   <path d="M13.2 17.2l-2.6 3.6h2.3l-.9 2.4"/>
-  </g>
-  <g id="i-fog" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-   <path d="M4.6 8.6h14.8M3 12.4h18M5.6 16.2h12.8M8 19.8h8"/>
-  </g>
-  <g id="i-plus" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-   <path d="M12 5.4v13.2M5.4 12h13.2"/>
-  </g>
-</defs></svg>
+<main id="main">
+  <div class="wrap">
+    <h1 class="sr-only">세계시간</h1>
+    <div class="hero">
+     <div class="clockbar">
 
-<div class="wrap">
+      <section aria-labelledby="refHeading">
+        <p class="ref-city" id="refHeading">
+          <span id="refName">서울</span> · <span id="refCountry">대한민국</span>
+        </p>
+        <p class="clock" id="clock" role="timer" aria-live="off">
+          <span id="clockHM">--:--</span><span class="sec" id="clockS">--</span>
+        </p>
+        <div class="hero-meta">
+          <span class="date" id="refDate">&nbsp;</span>
+          <span class="badge" id="refWeather" aria-live="polite" hidden></span>
+        </div>
+      </section>
 
-  <header>
-    <div class="hello">Hello Jinho!</div>
-    <div class="now" id="now">--:--<span class="s">--</span></div>
-    <div class="meta">
-      <b id="refCity">—</b><span id="refDate"></span>
-      <span id="wxIc" aria-hidden="true"></span><span id="wx" aria-live="polite">날씨 확인 중</span>
+      <section class="shift" aria-labelledby="shiftLabel">
+          <div class="shift-head">
+            <h2 id="shiftLabel">시간 옮겨 보기</h2>
+            <button type="button" class="shift-reset" id="shiftReset" disabled>지금으로 되돌리기</button>
+          </div>
+          <output class="shift-val" id="shiftVal" for="shiftRange">지금</output>
+          <div class="slider">
+            <input type="range" id="shiftRange" min="-24" max="24" step="0.5" value="0"
+                   aria-labelledby="shiftLabel" aria-describedby="shiftVal">
+          </div>
+          <div class="slider-ticks" aria-hidden="true">
+            <span>-24</span><span>-12</span><span>0</span><span>+12</span><span>+24</span>
+          </div>
+      </section>
+
+     </div>
+
+      <section class="panel" aria-labelledby="railHeading" style="margin-top:var(--sp-lg)">
+        <h2 class="t-body-sm" id="railHeading" style="margin-bottom:var(--sp-xs)">도시별 현재 시각</h2>
+        <div class="rail" id="rail"></div>
+
+        <form class="add-row" id="addForm">
+          <label class="field-label" for="addCity" hidden>도시 이름</label>
+          <input class="input" id="addCity" name="city" list="cityList" autocomplete="off" spellcheck="false"
+                 placeholder="도시 이름을 입력하세요" aria-describedby="addHint">
+          <button type="submit" class="btn btn-primary">추가</button>
+        </form>
+        <datalist id="cityList"></datalist>
+        <p class="add-hint" id="addHint">이 브라우저에 저장됩니다. 주소를 복사하면 다른 기기로 옮길 수 있습니다.</p>
+        <p class="error" id="addError" role="alert" hidden></p>
+      </section>
+
     </div>
-  </header>
-
-  <section class="shift">
-    <div class="shift-head">
-      <span class="lb">시간 이동</span>
-      <output id="shiftOut">지금</output>
-      <button type="button" id="reset" hidden>초기화</button>
-    </div>
-    <div class="track">
-      <input type="range" id="slider" min="-24" max="24" step="1" value="0" aria-label="시간 이동">
-      <div class="ruler" id="ruler"></div>
-      <div class="scale">
-        <span id="sc-24">−24</span><span id="sc-12">−12</span><span id="sc0">지금</span><span id="sc12">+12</span><span id="sc24">+24</span>
-      </div>
-    </div>
-  </section>
-
-  <div id="list"></div>
-
-  <div class="add">
-    <svg class="ic" width="15" height="15" viewBox="0 0 24 24"><use href="#i-plus"/></svg>
-    <input id="input" list="cities" placeholder="도시 추가" autocomplete="off">
-    <datalist id="cities"></datalist>
   </div>
+</main>
 
-  <div class="tools">
-    <button type="button" id="copyDefaults" title="현재 목록을 소스에 붙여넣을 형태로 복사합니다">기본값 복사</button>
-    <span aria-hidden="true">·</span>
-    <button type="button" id="copyLink" title="현재 목록이 그대로 열리는 주소를 복사합니다">주소 복사</button>
-    <span aria-hidden="true">·</span>
-    <button type="button" id="restore">기본 목록으로</button>
-  </div>
+<div id="pagefoot"></div>
 
-</div>
-
+<script src="meridian.js"></script>
 <script>
-const CITIES=[["서울","Asia/Seoul"],["도쿄","Asia/Tokyo"],["오사카","Asia/Tokyo"],["베이징","Asia/Shanghai"],["상하이","Asia/Shanghai"],["홍콩","Asia/Hong_Kong"],["타이베이","Asia/Taipei"],["마닐라","Asia/Manila"],["하노이","Asia/Ho_Chi_Minh"],["방콕","Asia/Bangkok"],["싱가포르","Asia/Singapore"],["자카르타","Asia/Jakarta"],["울란바토르","Asia/Ulaanbaatar"],["다카","Asia/Dhaka"],["카트만두","Asia/Kathmandu"],["델리","Asia/Kolkata"],["뭄바이","Asia/Kolkata"],["콜롬보","Asia/Colombo"],["타슈켄트","Asia/Tashkent"],["알마티","Asia/Almaty"],["카라치","Asia/Karachi"],["두바이","Asia/Dubai"],["도하","Asia/Qatar"],["리야드","Asia/Riyadh"],["테헤란","Asia/Tehran"],["모스크바","Europe/Moscow"],["이스탄불","Europe/Istanbul"],["카이로","Africa/Cairo"],["나이로비","Africa/Nairobi"],["요하네스버그","Africa/Johannesburg"],["베를린","Europe/Berlin"],["프랑크푸르트","Europe/Berlin"],["암스테르담","Europe/Amsterdam"],["파리","Europe/Paris"],["로마","Europe/Rome"],["마드리드","Europe/Madrid"],["취리히","Europe/Zurich"],["런던","Europe/London"],["더블린","Europe/Dublin"],["리스본","Europe/Lisbon"],["상파울루","America/Sao_Paulo"],["부에노스아이레스","America/Argentina/Buenos_Aires"],["산티아고","America/Santiago"],["뉴욕","America/New_York"],["토론토","America/Toronto"],["시카고","America/Chicago"],["멕시코시티","America/Mexico_City"],["덴버","America/Denver"],["로스앤젤레스","America/Los_Angeles"],["샌프란시스코","America/Los_Angeles"],["시애틀","America/Los_Angeles"],["밴쿠버","America/Vancouver"],["앵커리지","America/Anchorage"],["호놀룰루","Pacific/Honolulu"],["괌","Pacific/Guam"],["사이판","Pacific/Saipan"],["시드니","Australia/Sydney"],["멜버른","Australia/Melbourne"],["퍼스","Australia/Perth"],["오클랜드","Pacific/Auckland"]];
-const tzOf=new Map(CITIES);
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
 
-const localTz=Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Seoul";
-const known=CITIES.find(c=>c[1]===localTz);
-/* 목록에 없는 타임존이면 서울로 떨어뜨리지 않고 로컬 존을 그대로 기준으로 쓴다 */
-const ref=known?known[0]:localTz.split("/").pop().replace(/_/g," ");
-if(!known) tzOf.set(ref,localTz);
+  document.getElementById('chrome').innerHTML = M.nav('세계시간');
+  document.getElementById('pagefoot').innerHTML =
+    M.foot('날씨 <a href="https://open-meteo.com/">Open-Meteo</a>');
 
-const KEY="worldclock.cities";
-const DEFAULTS=["서울","방콕","두바이","런던","뉴욕","로스앤젤레스"];
-const withRef=arr=>arr.includes(ref)?arr:[ref,...arr];
-function load(){
-  try{
-    const raw=localStorage.getItem(KEY);
-    if(!raw) return null;
-    const arr=JSON.parse(raw).filter(n=>tzOf.has(n));
-    return arr.length?arr:null;
-  }catch(e){ return null; }
-}
-function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify(shown)); }catch(e){}
-}
-/* ?c=서울,런던,뉴욕 으로 목록을 실어 보낼 수 있다 (기기 간 공유용) */
-function fromQuery(){
-  try{
-    const q=new URLSearchParams(location.search).get("c");
-    if(!q) return null;
-    const arr=q.split(",").map(s=>s.trim()).filter(n=>tzOf.has(n));
-    return arr.length?[...new Set(arr)]:null;
-  }catch(e){ return null; }
-}
-const urlList=fromQuery();
-const urlMode=!!urlList;
-/* 우선순위: 주소 > 저장본 > 기본값. 저장본은 그대로 존중한다 —
-   기준 도시를 지운 것도 사용자의 선택이므로 되살리지 않는다 */
-let shown=urlList||load()||withRef(DEFAULTS.slice());
-let shiftH=0;
+  $('navActions').innerHTML =
+    '<button type="button" class="btn btn-tertiary" id="copyUrl">주소 복사</button>' +
+    '<button type="button" class="btn btn-secondary" id="focusAdd">도시 추가</button>';
 
-const icon=(id,size,color)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="color:${color}"><use href="#${id}"/></svg>`;
-
-/* Intl 포매터는 생성 비용이 커서 타임존별로 캐싱한다 (tick이 매초 돈다) */
-const fCache=new Map(),dCache=new Map();
-const fmt=tz=>{
-  let f=fCache.get(tz);
-  if(!f){f=new Intl.DateTimeFormat("en-US",{timeZone:tz,hour12:false,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});fCache.set(tz,f)}
-  return f;
-};
-const dFmt=tz=>{
-  let f=dCache.get(tz);
-  if(!f){f=new Intl.DateTimeFormat("ko-KR",{timeZone:tz,month:"long",day:"numeric",weekday:"short"});dCache.set(tz,f)}
-  return f;
-};
-const pad=n=>String(n).padStart(2,"0");
-const parts=(d,tz)=>{
-  const p={};
-  for(const x of fmt(tz).formatToParts(d)) p[x.type]=x.value;
-  if(p.hour==="24"){
-    /* h24를 내놓는 엔진 대비: 24시는 "다음 날 0시"라 날짜도 같이 넘겨야 한다 */
-    const t=new Date(Date.UTC(+p.year,+p.month-1,+p.day)+864e5);
-    p.year=String(t.getUTCFullYear());p.month=pad(t.getUTCMonth()+1);p.day=pad(t.getUTCDate());p.hour="00";
+  /* ---------- 상태 ---------- */
+  var params = new URLSearchParams(location.search);
+  var fromUrl = params.get('c');
+  var cities;
+  if (fromUrl) {
+    cities = fromUrl.split(',').map(function (s) { return s.trim(); })
+                    .filter(function (s) { return M.CITIES[s]; });
+    if (cities.length) M.save('cities', cities);
   }
-  return p;
-};
-const offset=(d,tz)=>{const p=parts(d,tz);return Math.round((Date.UTC(+p.year,p.month-1,+p.day,+p.hour,+p.minute,+p.second)-d.getTime())/60000)};
-const dateStr=(d,tz)=>dFmt(tz).format(d);
-const num=n=>(+n.toFixed(2)).toString();
-const ymd=p=>+p.year*10000 + +p.month*100 + +p.day;
-/* 값이 그대로면 DOM을 건드리지 않는다 */
-const setText=(el,v)=>{if(el.textContent!==v)el.textContent=v};
-const setHTML=(el,key,html)=>{if(el.dataset.k!==key){el.dataset.k=key;el.innerHTML=html}};
+  if (!cities || !cities.length) cities = M.load('cities', M.DEFAULT_CITIES).slice();
+  cities = cities.filter(function (c) { return M.CITIES[c]; });
+  if (!cities.length) cities = M.DEFAULT_CITIES.slice();
 
-const ruler=document.getElementById("ruler");
-for(let h=-24;h<=24;h++){
-  const t=document.createElement("i");
-  t.style.left=((h+24)/48*100)+"%";
-  if(h%6===0) t.className="mj";
-  ruler.appendChild(t);
-}
+  var shiftHours = 0;
 
-const list=document.getElementById("list");
-const rows=new Map();
-const elNow=document.getElementById("now"),elCity=document.getElementById("refCity"),elDate=document.getElementById("refDate");
-const marks=[["sc-24",-24,"−24시간"],["sc-12",-12,"−12"],["sc0",0,"지금"],["sc12",12,"+12"],["sc24",24,"+24시간"]]
-  .map(([id,hh,lb])=>({el:document.getElementById(id),hh,lb}));
+  /* 도시 이름 자동완성 */
+  $('cityList').innerHTML = Object.keys(M.CITIES).map(function (n) {
+    return '<option value="' + M.escapeHtml(n) + '"></option>';
+  }).join('');
 
-/* 해/달 아이콘 경계와 심야 흐림 구간은 일부러 다르다 — 저녁 시간대는 흐리지 않게 둔다 */
-const DAY_FROM=6,DAY_TO=18,DIM_FROM=22,DIM_TO=7;
+  function refCity() { return cities[0]; }
+  function shiftedNow() { return new Date(Date.now() + shiftHours * 3600000); }
 
-function build(){
-  list.innerHTML="";rows.clear();
-  const d=new Date();
-  [...shown].sort((a,b)=>offset(d,tzOf.get(a))-offset(d,tzOf.get(b))).forEach(name=>{
-    const el=document.createElement("div");
-    el.className="row"+(name===ref?" ref":"");
-    el.innerHTML=`<button class="del" type="button" aria-label="${name} 삭제">×</button>
-      <div><div class="nm"><span class="ph"></span><span class="name"></span></div><div class="sub"></div></div>
-      <div class="right"><div class="t"></div><div class="off"></div></div>`;
-    el.querySelector(".name").textContent=name;
-    el.querySelector(".del").onclick=()=>{shown=shown.filter(c=>c!==name);commit()};
-    list.appendChild(el);
-    rows.set(name,{el,tz:tzOf.get(name),ph:el.querySelector(".ph"),t:el.querySelector(".t"),
-      sub:el.querySelector(".sub"),off:el.querySelector(".off")});
-  });
-}
+  /* ---------- 렌더 ---------- */
+  function renderRail() {
+    var now = shiftedNow();
+    var ref = refCity(), refTz = M.CITIES[ref][0];
+    var refP = M.tzParts(refTz, now);
 
-function tick(){
-  const d=new Date(Date.now()+shiftH*3600000);
-  const rtz=tzOf.get(ref), rp=parts(d,rtz), roff=offset(d,rtz);
-  elNow.innerHTML=`${rp.hour}:${rp.minute}<span class="s">${rp.second}</span>`;
-  setText(elCity,ref);
-  setText(elDate,dateStr(d,rtz));
+    $('rail').innerHTML = cities.map(function (city, idx) {
+      var meta = M.CITIES[city], tz = meta[0];
+      var p = M.tzParts(tz, now);
+      var isRef = idx === 0;
+      var delta = M.dayDelta(refP, p);
+      var dayLabel = delta === 0 ? '오늘' : delta > 0 ? '내일' : '어제';
+      var off = isRef ? '기준' : M.formatOffset(M.offsetMinutes(refTz, tz, now));
 
-  for(const m of marks){
-    const q=parts(new Date(Date.now()+m.hh*3600000),rtz);
-    setHTML(m.el,`${m.lb} ${q.month}${q.day}`,`${m.lb}<em>${+q.month}/${+q.day}</em>`);
-    m.el.classList.toggle("on",shiftH===m.hh);
+      var dl = M.daylight(city, now);
+      var band = '';
+      for (var h = 0; h < 24; h++) {
+        var cls = (h === p.hour) ? 'now' : (dl.hours[h] ? 'day' : '');
+        band += '<i class="' + cls + '"></i>';
+      }
+      var legend = dl.setLabel
+        ? '<span>해 뜸 <span class="mono">' + dl.riseLabel + '</span></span>' +
+          '<span>해 짐 <span class="mono">' + dl.setLabel + '</span></span>'
+        : (dl.riseLabel ? '<span>' + dl.riseLabel + '</span>' : '');
+
+      return '<div class="rail-row' + (isRef ? ' is-ref' : '') + '">' +
+        '<div class="rail-head">' +
+          '<div>' +
+            '<div class="rail-name">' + M.escapeHtml(city) + '</div>' +
+            '<div class="rail-off">' + off + '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:flex-start;gap:var(--sp-xs)">' +
+            '<div>' +
+              '<div class="rail-time">' + M.pad2(p.hour) + ':' + M.pad2(p.minute) + '</div>' +
+              '<div class="rail-day">' + dayLabel + '</div>' +
+            '</div>' +
+            (cities.length > 1
+              ? '<button type="button" class="rail-remove" data-remove="' + M.escapeHtml(city) +
+                '" aria-label="' + M.escapeHtml(city) + ' 삭제">' + M.icon('close', 15) + '</button>'
+              : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="band" role="img" aria-label="' + M.escapeHtml(city) + ' 낮과 밤">' + band + '</div>' +
+        (legend ? '<div class="band-legend">' + legend + '</div>' : '') +
+      '</div>';
+    }).join('');
   }
 
-  rows.forEach(r=>{
-    const p=parts(d,r.tz), h=+p.hour;
-    const day=h>=DAY_FROM&&h<DAY_TO;
-    setHTML(r.ph,day?"d":"n",icon(day?"i-sun":"i-moon",16,day?"var(--sun)":"var(--moon)"));
-    setText(r.t,`${p.hour}:${p.minute}`);
-    setText(r.sub,dateStr(d,r.tz));
-    const diff=(offset(d,r.tz)-roff)/60;
-    const a=ymd(p),b=ymd(rp);
-    const sd=a===b?"":(a>b?" · 다음날":" · 전날");
-    setText(r.off,(diff===0?"기준":`${diff>0?"+":"−"}${num(Math.abs(diff))}시간`)+sd);
-    r.el.classList.toggle("night",h<DIM_TO||h>=DIM_FROM);
-  });
-}
+  function renderHero() {
+    var now = shiftedNow();
+    var ref = refCity(), meta = M.CITIES[ref];
+    var p = M.tzParts(meta[0], now);
+    $('refName').textContent = ref;
+    $('refCountry').textContent = meta[3];
+    $('clockHM').textContent = M.pad2(p.hour) + ':' + M.pad2(p.minute);
+    $('clockS').textContent = M.pad2(p.second);
+    $('clock').setAttribute('aria-label',
+      ref + ' ' + p.hour + '시 ' + p.minute + '분');
+    $('refDate').textContent = M.formatDate(meta[0], now);
+  }
 
-const slider=document.getElementById("slider"),out=document.getElementById("shiftOut"),reset=document.getElementById("reset");
-function apply(){
-  shiftH=+slider.value;
-  out.textContent=shiftH===0?"지금":`${shiftH>0?"+":"−"}${Math.abs(shiftH)}시간`;
-  out.classList.toggle("moved",shiftH!==0);
-  reset.hidden=shiftH===0;
+  function tick() {
+    renderHero();
+    renderRail();
+  }
+
+  /* ---------- 기준 도시 날씨 ---------- */
+  function loadRefWeather() {
+    var ref = refCity(), meta = M.CITIES[ref];
+    var badge = $('refWeather');
+    badge.hidden = false;
+    badge.innerHTML = '<span class="skeleton">불러오는 중…</span>';
+    M.getJSON('https://api.open-meteo.com/v1/forecast?latitude=' + meta[1] +
+      '&longitude=' + meta[2] + '&current=temperature_2m,weather_code&timezone=' +
+      encodeURIComponent(meta[0]))
+      .then(function (d) {
+        var c = d.current, w = M.describe(c.weather_code);
+        badge.textContent = w[0] + ' ' + c.temperature_2m.toFixed(1) + '°';
+      })
+      .catch(function () { badge.hidden = true; });
+  }
+
+  /* ---------- 이벤트 ---------- */
+  $('shiftRange').addEventListener('input', function (e) {
+    shiftHours = parseFloat(e.target.value);
+    var out = $('shiftVal'), reset = $('shiftReset');
+    if (shiftHours === 0) {
+      out.textContent = '지금';
+      out.classList.remove('moved');
+      reset.disabled = true;
+    } else {
+      var sign = shiftHours > 0 ? '+' : '-';
+      var abs = Math.abs(shiftHours);
+      var h = Math.floor(abs), m = Math.round((abs - h) * 60);
+      out.textContent = sign + h + '시간' + (m ? ' ' + m + '분' : '');
+      out.classList.add('moved');
+      reset.disabled = false;
+    }
+    tick();
+  });
+
+  $('shiftReset').addEventListener('click', function () {
+    shiftHours = 0;
+    $('shiftRange').value = 0;
+    $('shiftRange').dispatchEvent(new Event('input'));
+  });
+
+  $('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = $('addCity'), name = input.value.trim(), err = $('addError');
+    err.hidden = true;
+    if (!name) return;
+    if (!M.CITIES[name]) {
+      err.hidden = false;
+      err.textContent = '“' + name + '” 은 목록에 없습니다. 입력창의 자동완성에서 골라 주세요.';
+      input.focus();
+      return;
+    }
+    if (cities.indexOf(name) !== -1) {
+      err.hidden = false;
+      err.textContent = '“' + name + '” 은 이미 있습니다.';
+      input.focus();
+      return;
+    }
+    cities.push(name);
+    M.save('cities', cities);
+    input.value = '';
+    tick();
+  });
+
+  $('rail').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    var name = btn.getAttribute('data-remove');
+    var wasRef = cities[0] === name;
+    cities = cities.filter(function (c) { return c !== name; });
+    M.save('cities', cities);
+    tick();
+    if (wasRef) loadRefWeather();
+  });
+
+  $('copyUrl').addEventListener('click', function () {
+    var url = location.origin + location.pathname + '?c=' + encodeURIComponent(cities.join(','));
+    var btn = this;
+    navigator.clipboard.writeText(url).then(function () {
+      var old = btn.textContent;
+      btn.textContent = '복사했습니다';
+      setTimeout(function () { btn.textContent = old; }, 1600);
+    }, function () {
+      window.prompt('아래 주소를 복사하세요', url);
+    });
+  });
+
+  $('focusAdd').addEventListener('click', function () { $('addCity').focus(); });
+
+  /* ---------- 시작 ---------- */
   tick();
-}
-slider.oninput=apply;
-reset.onclick=()=>{slider.value=0;apply()};
-
-const input=document.getElementById("input"),dl=document.getElementById("cities");
-function fillList(){
-  dl.innerHTML="";
-  for(const [n] of CITIES){ if(shown.includes(n)) continue; const o=document.createElement("option"); o.value=n; dl.appendChild(o); }
-}
-/* 목록 URL. urlMode 로 들어왔을 때만 주소창을 따라 갱신한다 */
-function listURL(){
-  const q="?c="+shown.map(encodeURIComponent).join(",");
-  try{
-    const u=new URL(location.href);
-    /* data: blob: 등에서는 주소를 통째로 끌고 오므로 쿼리만 돌려준다 */
-    if(!/^(https?|file):$/.test(u.protocol)) return q;
-    u.search="";
-    u.searchParams.set("c",shown.join(","));
-    return u.href;
-  }catch(e){ return q }
-}
-function syncURL(){
-  if(!urlMode) return;
-  try{ history.replaceState(null,"",listURL()) }catch(e){}   /* file:// 은 막힐 수 있다 */
-}
-/* 목록이 바뀔 때 거치는 단일 경로 */
-function commit(){ save();syncURL();build();tick();fillList() }
-
-function addCity(v){
-  const n=(v||"").trim();
-  if(!tzOf.has(n)||shown.includes(n)) return false;
-  shown.push(n);commit();return true;
-}
-input.addEventListener("keydown",e=>{
-  if(e.key!=="Enter") return;
-  if(e.isComposing||e.keyCode===229) return;   /* 한글 조합을 확정하는 Enter는 흘려보낸다 */
-  addCity(input.value);
-  input.value="";
-});
-/* datalist 항목을 마우스로 고르면 keydown이 오지 않는다 */
-input.addEventListener("change",()=>{ if(addCity(input.value)) input.value=""; });
-
-/* 클립보드. https 가 아니면 Clipboard API 가 막히므로 execCommand 로 떨어진다 */
-async function copy(text){
-  try{ await navigator.clipboard.writeText(text); return true }catch(e){}
-  const ta=document.createElement("textarea");
-  ta.value=text; ta.setAttribute("readonly","");
-  ta.style.cssText="position:fixed;top:0;left:0;opacity:0";
-  document.body.appendChild(ta); ta.select();
-  let ok=false;
-  try{ ok=document.execCommand("copy") }catch(e){}
-  ta.remove();
-  return ok;
-}
-function flash(btn,msg){
-  if(btn.dataset.busy) return;
-  const old=btn.textContent;
-  btn.dataset.busy="1";btn.textContent=msg;btn.disabled=true;
-  setTimeout(()=>{btn.textContent=old;btn.disabled=false;delete btn.dataset.busy},1300);
-}
-const bind=(id,make)=>{
-  const b=document.getElementById(id);
-  b.onclick=async()=>{ flash(b, await copy(make()) ? "복사됨" : "복사 실패") };
-};
-/* 소스의 DEFAULTS 한 줄을 그대로 교체할 수 있는 형태로 */
-bind("copyDefaults",()=>`const DEFAULTS=${JSON.stringify(shown)};`);
-bind("copyLink",listURL);
-
-document.getElementById("restore").onclick=()=>{
-  shown=withRef(DEFAULTS.slice());
-  commit();
-};
-
-/* 오늘의 날씨 (Open-Meteo, 키 없음) */
-const COORDS={"서울":[37.57,126.98],"도쿄":[35.68,139.69],"오사카":[34.69,135.5],"베이징":[39.9,116.4],"상하이":[31.23,121.47],"홍콩":[22.32,114.17],"타이베이":[25.03,121.57],"마닐라":[14.6,120.98],"하노이":[21.03,105.85],"방콕":[13.75,100.5],"싱가포르":[1.35,103.82],"자카르타":[-6.21,106.85],"델리":[28.61,77.21],"두바이":[25.2,55.27],"모스크바":[55.76,37.62],"이스탄불":[41.01,28.98],"베를린":[52.52,13.41],"프랑크푸르트":[50.11,8.68],"암스테르담":[52.37,4.9],"파리":[48.86,2.35],"로마":[41.9,12.5],"마드리드":[40.42,-3.7],"런던":[51.51,-0.13],"리스본":[38.72,-9.14],"뉴욕":[40.71,-74.01],"토론토":[43.65,-79.38],"시카고":[41.88,-87.63],"덴버":[39.74,-104.99],"로스앤젤레스":[34.05,-118.24],"샌프란시스코":[37.77,-122.42],"시애틀":[47.61,-122.33],"밴쿠버":[49.28,-123.12],"호놀룰루":[21.31,-157.86],"괌":[13.44,144.79],"사이판":[15.18,145.75],"시드니":[-33.87,151.21],"멜버른":[-37.81,144.96],"오클랜드":[-36.85,174.76],"카이로":[30.04,31.24],"요하네스버그":[-26.2,28.05],"울란바토르":[47.92,106.92],"다카":[23.81,90.41],"카트만두":[27.72,85.32],"뭄바이":[19.08,72.88],"콜롬보":[6.93,79.86],"타슈켄트":[41.3,69.24],"알마티":[43.24,76.89],"카라치":[24.86,67.01],"도하":[25.29,51.53],"리야드":[24.71,46.68],"테헤란":[35.69,51.39],"나이로비":[-1.29,36.82],"취리히":[47.37,8.54],"더블린":[53.35,-6.26],"상파울루":[-23.55,-46.63],"부에노스아이레스":[-34.6,-58.38],"산티아고":[-33.45,-70.67],"멕시코시티":[19.43,-99.13],"앵커리지":[61.22,-149.9],"퍼스":[-31.95,115.86]};
-const WMO={0:["맑음","i-sun","var(--sun)"],1:["대체로 맑음","i-partly","var(--sun)"],2:["구름 조금","i-partly","var(--sun)"],3:["흐림","i-cloud","var(--moon)"],45:["안개","i-fog","var(--moon)"],48:["안개","i-fog","var(--moon)"],51:["이슬비","i-rain","var(--rain)"],53:["이슬비","i-rain","var(--rain)"],55:["이슬비","i-rain","var(--rain)"],56:["어는 이슬비","i-rain","var(--rain)"],57:["어는 이슬비","i-rain","var(--rain)"],61:["약한 비","i-rain","var(--rain)"],63:["비","i-rain","var(--rain)"],65:["강한 비","i-rain","var(--rain)"],66:["어는 비","i-rain","var(--rain)"],67:["어는 비","i-rain","var(--rain)"],71:["약한 눈","i-snow","var(--snow)"],73:["눈","i-snow","var(--snow)"],75:["강한 눈","i-snow","var(--snow)"],77:["싸락눈","i-snow","var(--snow)"],80:["소나기","i-rain","var(--rain)"],81:["소나기","i-rain","var(--rain)"],82:["강한 소나기","i-rain","var(--rain)"],85:["소낙눈","i-snow","var(--snow)"],86:["소낙눈","i-snow","var(--snow)"],95:["뇌우","i-storm","var(--accent)"],96:["뇌우·우박","i-storm","var(--accent)"],99:["뇌우·우박","i-storm","var(--accent)"]};
-
-const wxIc=document.getElementById("wxIc"),wxTx=document.getElementById("wx");
-let wxCtl=null;
-async function loadWeather(){
-  const c=COORDS[ref];
-  if(!c){ wxIc.innerHTML=""; wxTx.textContent="날씨 정보 없음"; return; }
-  if(wxCtl) wxCtl.abort();                       /* 이전 요청이 아직 살아 있으면 접는다 */
-  const ctl=wxCtl=new AbortController();
-  const timer=setTimeout(()=>ctl.abort(),8000);  /* 응답이 늘어지면 8초에 끊는다 */
-  try{
-    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1`,{signal:ctl.signal});
-    if(!r.ok) throw new Error(r.status);
-    const j=await r.json();
-    if(!j.current) throw new Error("no data");
-    const w=WMO[j.current.weather_code]||["","i-cloud","var(--moon)"];
-    wxIc.innerHTML=icon(w[1],16,w[2]);
-    wxTx.textContent=`${Math.round(j.current.temperature_2m)}° ${w[0]} · ${Math.round(j.daily.temperature_2m_min[0])}° / ${Math.round(j.daily.temperature_2m_max[0])}°`;
-  }catch(e){
-    if(ctl!==wxCtl) return;                      /* 새 요청에 밀린 것이면 화면을 건드리지 않는다 */
-    wxIc.innerHTML="";
-    wxTx.textContent="날씨를 불러올 수 없습니다";
-  }finally{
-    clearTimeout(timer);
-    if(ctl===wxCtl) wxCtl=null;
-  }
-}
-
-if(urlMode) save();   /* 링크로 받은 목록은 이 기기에 남겨 둔다 */
-build();fillList();apply();
-loadWeather();
-setInterval(tick,1000);
-setInterval(loadWeather,600000);
+  loadRefWeather();
+  setInterval(tick, 1000);
+  setInterval(loadRefWeather, 15 * 60 * 1000);
+})();
 </script>
 </body>
 </html>

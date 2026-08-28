@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>환율 · Meridian</title>
+<meta name="description" content="원화 기준 환율과 통화 변환. 유럽중앙은행 고시 기준.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#010102">
+<link rel="preconnect" href="https://api.frankfurter.dev" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="meridian.css">
+</head>
+<body>
+<div id="chrome"></div>
+
+<main id="main">
+  <div class="wrap">
+    <div class="fx-hero fx-split">
+
+      <section aria-labelledby="convHeading">
+        <h1 class="t-display" id="convHeading" style="max-width:14ch">얼마인지 바로 봅니다</h1>
+
+        <div class="conv" style="margin-top:var(--sp-xl)">
+          <div>
+            <label class="field-label" for="fromAmt">보내는 금액</label>
+            <div class="leg-field">
+              <select id="fromCur" aria-label="보내는 통화"></select>
+              <input class="amt mono" id="fromAmt" name="fromAmount" autocomplete="off" spellcheck="false" inputmode="decimal" value="100" aria-labelledby="convHeading">
+            </div>
+          </div>
+          <button type="button" class="swap" id="swap" aria-label="통화 서로 바꾸기"></button>
+          <div>
+            <label class="field-label" for="toAmt">받는 금액</label>
+            <div class="leg-field is-out">
+              <select id="toCur" aria-label="받는 통화"></select>
+              <input class="amt mono" id="toAmt" name="toAmount" autocomplete="off" spellcheck="false" inputmode="decimal" value="0" aria-label="변환 결과">
+            </div>
+          </div>
+        </div>
+
+        <p class="fx-rate" id="rateLine" aria-live="polite"><span class="skeleton">환율을 불러오는 중…</span></p>
+        <p class="fx-asof" id="asOf">&nbsp;</p>
+        <p class="error" id="fxError" role="alert" hidden></p>
+      </section>
+
+      <section class="trend" aria-labelledby="trendHeading">
+        <div class="trend-head">
+          <h2 id="trendHeading">최근 30일 <span id="trendPair"></span></h2>
+          <span class="trend-now mono" id="trendNow"></span>
+        </div>
+        <svg id="trendSvg" viewBox="0 0 300 120" preserveAspectRatio="none" role="img"
+             aria-labelledby="trendHeading" aria-describedby="trendDesc">
+          <polyline id="trendLine" points=""></polyline>
+        </svg>
+        <p id="trendDesc" class="t-caption" hidden></p>
+        <div class="trend-axis"><span id="trendFrom"></span><span id="trendTo"></span></div>
+      </section>
+
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="section" aria-labelledby="tableHeading">
+      <h2 class="t-headline" id="tableHeading">원화 기준 환율</h2>
+      <div class="fx-grid" id="grid"></div>
+      <form class="add-row" id="addForm" style="max-width:420px">
+        <label class="field-label" for="addCur" hidden>통화 코드</label>
+        <select class="input" id="addCur"></select>
+        <button type="submit" class="btn btn-primary">추가</button>
+      </form>
+      <p class="add-hint">고른 통화는 이 브라우저에 저장됩니다.</p>
+    </section>
+  </div>
+</main>
+
+<div id="pagefoot"></div>
+
+<script src="meridian.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  document.getElementById('chrome').innerHTML = M.nav('환율');
+  document.getElementById('pagefoot').innerHTML =
+    M.foot('환율 <a href="https://frankfurter.dev/">Frankfurter</a> · 유럽중앙은행 고시');
+  $('navActions').innerHTML =
+    '<button type="button" class="btn btn-tertiary" id="copyUrl">주소 복사</button>';
+  $('swap').innerHTML = M.icon('swap', 16);
+
+  var API = 'https://api.frankfurter.dev/v1/';
+
+  var params = new URLSearchParams(location.search);
+  var fromUrl = params.get('v');
+  var picks;
+  if (fromUrl) {
+    picks = fromUrl.split(',').map(function (s) { return s.trim().toUpperCase(); })
+                   .filter(function (s) { return /^[A-Z]{3}$/.test(s) && s !== 'KRW'; });
+    if (picks.length) M.save('currencies', picks);
+  }
+  if (!picks || !picks.length) picks = M.load('currencies', M.DEFAULT_CURRENCIES).slice();
+
+  var krwPer = {};   // 통화 1단위당 원화
+  var series = {};   // 통화별 30일 시계열 [[날짜, 원화], ...]
+  var asOfDate = '';
+  var available = [];
+
+  function name(code) { return M.CURRENCY_NAMES[code] || code; }
+  function unit(code) { return M.PER_100[code] ? 100 : 1; }
+  function label(code) { return name(code) + (M.PER_100[code] ? ' 100' : ''); }
+
+  /* ---------- 변환 ---------- */
+  function convert(amount, from, to) {
+    var a = from === 'KRW' ? 1 : krwPer[from];
+    var b = to === 'KRW' ? 1 : krwPer[to];
+    if (!a || !b) return null;
+    return amount * a / b;
+  }
+
+  function recalc(source) {
+    var from = $('fromCur').value, to = $('toCur').value;
+    var src = source === 'to' ? $('toAmt') : $('fromAmt');
+    var dst = source === 'to' ? $('fromAmt') : $('toAmt');
+    var raw = parseFloat(String(src.value).replace(/[^0-9.\-]/g, ''));
+    if (isNaN(raw)) { dst.value = ''; return; }
+    var v = source === 'to' ? convert(raw, to, from) : convert(raw, from, to);
+    if (v === null) return;
+    dst.value = M.num(v, v >= 100 ? 0 : 2);
+    updateRateLine();
+  }
+
+  function updateRateLine() {
+    var from = $('fromCur').value, to = $('toCur').value;
+    var one = convert(1, from, to);
+    if (one === null) return;
+    $('rateLine').innerHTML = '1 ' + from + ' = <b>' + M.num(one, M.rateDigits(one)) + '</b> ' + to;
+    var p = asOfDate.split('-');
+    $('asOf').textContent = '유럽중앙은행 ' + p[0] + '년 ' + (+p[1]) + '월 ' + (+p[2]) + '일 고시 기준';
+  }
+
+  /* ---------- 추이 ---------- */
+  function drawTrend() {
+    var from = $('fromCur').value, to = $('toCur').value;
+    var code = from !== 'KRW' ? from : to;
+    var rows = series[code];
+    $('trendPair').textContent = code + ' / KRW';
+    $('trendPair').setAttribute('translate', 'no');
+    if (!rows || rows.length < 2) {
+      $('trendLine').setAttribute('points', '');
+      $('trendNow').textContent = '';
+      $('trendFrom').textContent = '';
+      $('trendTo').textContent = '';
+      $('trendDesc').textContent = code + ' 의 과거 자료가 없습니다.';
+      return;
+    }
+    var vals = rows.map(function (r) { return r[1] * unit(code); });
+    $('trendLine').setAttribute('points', M.polyline(vals, 300, 116));
+    $('trendNow').textContent = M.num(vals[vals.length - 1], 2);
+    $('trendFrom').textContent = rows[0][0].slice(5).replace('-', '.');
+    $('trendTo').textContent = rows[rows.length - 1][0].slice(5).replace('-', '.');
+    $('trendDesc').textContent = code + ' 대비 원화, ' + rows[0][0] + ' 부터 ' +
+      rows[rows.length - 1][0] + ' 까지. 최고 ' + M.num(Math.max.apply(null, vals), 2) +
+      ', 최저 ' + M.num(Math.min.apply(null, vals), 2) + '.';
+  }
+
+  /* ---------- 카드 ---------- */
+  function renderGrid() {
+    var lead = $('fromCur').value;
+    $('grid').innerHTML = picks.map(function (code) {
+      var per = krwPer[code];
+      if (!per) return '';
+      var v = per * unit(code);
+      var rows = series[code] || [];
+      var first = rows.length ? rows[0][1] * unit(code) : null;
+      var delta = first ? ((v - first) / first * 100) : null;
+      var spark = rows.length > 1
+        ? '<svg viewBox="0 0 160 40" preserveAspectRatio="none" aria-hidden="true">' +
+          '<polyline points="' + M.polyline(rows.map(function (r) { return r[1]; }), 160, 38) + '"/></svg>'
+        : '';
+      return '<article class="fx-card' + (code === lead ? ' is-lead' : '') + '">' +
+        '<div class="top">' +
+          '<span class="code" translate="no">' + code + '</span>' +
+          '<span class="delta">' + (delta === null ? '' :
+            (delta > 0 ? '+' : '') + delta.toFixed(2) + '%') + '</span>' +
+        '</div>' +
+        '<p class="nm">' + M.escapeHtml(label(code)) + '</p>' +
+        '<p class="val">' + M.num(v, 2) + '</p>' +
+        '<p class="prev">' + (first === null ? '&nbsp;' : '30일 전 ' + M.num(first, 2)) + '</p>' +
+        spark +
+        '<button type="button" class="rail-remove" data-remove="' + code +
+          '" aria-label="' + code + ' 삭제">' + M.icon('close', 15) + '</button>' +
+      '</article>';
+    }).join('');
+  }
+
+  /* ---------- 선택 목록 ---------- */
+  function fillSelects() {
+    var all = available.slice();
+    if (all.indexOf('KRW') === -1) all.push('KRW');
+    all.sort();
+    var opts = all.map(function (c) {
+      return '<option value="' + c + '">' + c + '</option>';
+    }).join('');
+    $('fromCur').innerHTML = opts;
+    $('toCur').innerHTML = opts;
+    $('fromCur').value = picks[0] || 'USD';
+    $('toCur').value = 'KRW';
+
+    $('addCur').innerHTML = all.filter(function (c) {
+      return c !== 'KRW' && picks.indexOf(c) === -1;
+    }).map(function (c) {
+      return '<option value="' + c + '">' + c + ' · ' + M.escapeHtml(name(c)) + '</option>';
+    }).join('');
+  }
+
+  function refreshAll() {
+    updateRateLine();
+    recalc('from');
+    drawTrend();
+    renderGrid();
+  }
+
+  /* ---------- 이벤트 ---------- */
+  $('fromAmt').addEventListener('input', function () { recalc('from'); });
+  $('toAmt').addEventListener('input', function () { recalc('to'); });
+  $('fromCur').addEventListener('change', function () { recalc('from'); drawTrend(); renderGrid(); });
+  $('toCur').addEventListener('change', function () { recalc('from'); drawTrend(); });
+
+  $('swap').addEventListener('click', function () {
+    var f = $('fromCur').value;
+    $('fromCur').value = $('toCur').value;
+    $('toCur').value = f;
+    recalc('from'); drawTrend(); renderGrid();
+  });
+
+  $('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = $('addCur').value;
+    if (!code || picks.indexOf(code) !== -1) return;
+    picks.push(code);
+    M.save('currencies', picks);
+    loadSeries().then(function () { renderGrid(); fillAddSelect(); });
+  });
+
+  $('grid').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    picks = picks.filter(function (c) { return c !== btn.getAttribute('data-remove'); });
+    M.save('currencies', picks);
+    renderGrid();
+    fillAddSelect();
+  });
+
+  function fillAddSelect() {
+    var all = available.slice().sort();
+    $('addCur').innerHTML = all.filter(function (c) {
+      return c !== 'KRW' && picks.indexOf(c) === -1;
+    }).map(function (c) {
+      return '<option value="' + c + '">' + c + ' · ' + M.escapeHtml(name(c)) + '</option>';
+    }).join('');
+  }
+
+  $('copyUrl').addEventListener('click', function () {
+    var url = location.origin + location.pathname + '?v=' + picks.join(',');
+    var btn = this;
+    navigator.clipboard.writeText(url).then(function () {
+      var old = btn.textContent;
+      btn.textContent = '복사했습니다';
+      setTimeout(function () { btn.textContent = old; }, 1600);
+    }, function () { window.prompt('아래 주소를 복사하세요', url); });
+  });
+
+  /* ---------- 로딩 ---------- */
+  function iso(d) { return d.toISOString().slice(0, 10); }
+
+  function loadSeries() {
+    var end = new Date();
+    var begin = new Date(end.getTime() - 30 * 86400000);
+    var syms = picks.join(',');
+    if (!syms) return Promise.resolve();
+    /* ECB 원본 기준통화는 EUR 이다. base=KRW 로 받으면 0.00072 처럼 유효숫자가
+       두 자리로 잘려 역수를 취할 때 값이 튀고 그래프가 계단처럼 끊긴다. */
+    return M.getJSON(API + iso(begin) + '..' + iso(end) +
+                     '?base=EUR&symbols=KRW,' + syms)
+      .then(function (d) {
+        series = {};
+        Object.keys(d.rates).sort().forEach(function (date) {
+          var row = d.rates[date];
+          var krw = row.KRW;
+          if (!krw) return;
+          picks.forEach(function (code) {
+            var v = (code === 'EUR') ? 1 : row[code];
+            if (!v) return;
+            (series[code] = series[code] || []).push([date, krw / v]);
+          });
+        });
+      })
+      .catch(function () { series = {}; });
+  }
+
+  function start() {
+    $('fxError').hidden = true;
+    Promise.all([
+      M.getJSON(API + 'currencies'),
+      M.getJSON(API + 'latest?base=EUR')
+    ]).then(function (res) {
+      available = Object.keys(res[0]);
+      asOfDate = res[1].date;
+      var eur = res[1].rates, krw = eur.KRW;
+      if (!krw) throw new Error('KRW 없음');
+      krwPer = { EUR: krw };
+      Object.keys(eur).forEach(function (code) {
+        if (code !== 'KRW') krwPer[code] = krw / eur[code];
+      });
+      picks = picks.filter(function (c) { return krwPer[c]; });
+      if (!picks.length) picks = M.DEFAULT_CURRENCIES.filter(function (c) { return krwPer[c]; });
+      fillSelects();
+      fillAddSelect();
+      return loadSeries();
+    }).then(function () {
+      refreshAll();
+    }).catch(function () {
+      $('fxError').hidden = false;
+      $('fxError').innerHTML = '환율을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요. ' +
+        '<button type="button" id="retry">다시 시도</button>';
+      $('rateLine').textContent = '';
+      $('retry').addEventListener('click', start);
+    });
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
