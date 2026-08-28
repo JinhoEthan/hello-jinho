@@ -36,6 +36,7 @@
     '요하네스버그':['Africa/Johannesburg',  -26.2041,  28.0473, '남아프리카공화국'],
     '뉴욕':        ['America/New_York',      40.7128, -74.0060, '미국'],
     '워싱턴':      ['America/New_York',      38.9072, -77.0369, '미국'],
+    '마이애미':    ['America/New_York',      25.7617, -80.1918, '미국'],
     '시카고':      ['America/Chicago',       41.8781, -87.6298, '미국'],
     '덴버':        ['America/Denver',        39.7392, -104.9903, '미국'],
     '로스앤젤레스':['America/Los_Angeles',   34.0522, -118.2437, '미국'],
@@ -52,7 +53,7 @@
     '호놀룰루':    ['Pacific/Honolulu',      21.3069, -157.8583, '미국']
   };
 
-  var DEFAULT_CITIES = ['서울', '방콕', '두바이', '런던', '뉴욕', '로스앤젤레스'];
+  var DEFAULT_CITIES = ['서울', '방콕', '두바이', '런던', '뉴욕', '마이애미', '로스앤젤레스'];
   var DEFAULT_CURRENCIES = ['USD', 'EUR', 'JPY', 'CNY', 'GBP', 'AUD'];
 
   var CURRENCY_NAMES = {
