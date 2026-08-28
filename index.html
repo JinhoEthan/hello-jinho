@@ -72,11 +72,10 @@
         <form class="add-row" id="addForm">
           <label class="field-label" for="addCity" hidden>도시 이름</label>
           <input class="input" id="addCity" name="city" list="cityList" autocomplete="off" spellcheck="false"
-                 placeholder="도시 이름을 입력하세요" aria-describedby="addHint">
+                 placeholder="도시 이름을 입력하세요">
           <button type="submit" class="btn btn-primary">추가</button>
         </form>
         <datalist id="cityList"></datalist>
-        <p class="add-hint" id="addHint">이 브라우저에 저장됩니다. 주소를 복사하면 다른 기기로 옮길 수 있습니다.</p>
         <p class="error" id="addError" role="alert" hidden></p>
       </section>
 
@@ -269,19 +268,19 @@
     $('marks').innerHTML = marks.map(function (b, i) {
       var label = b.name || M.hostOf(b.url);
       return '<span class="mark-item">' +
-        '<a href="' + M.escapeHtml(b.url) + '">' +
+        '<a href="' + M.escapeHtml(b.url) + '" title="' + M.escapeHtml(label) + '">' +
           '<img src="' + M.escapeHtml(M.faviconUrl(b.url)) + '" alt="" ' +
-            'width="16" height="16" loading="lazy" data-letter="' +
+            'width="14" height="14" loading="lazy" data-letter="' +
             M.escapeHtml(label.slice(0, 1)) + '">' +
-          '<span>' + M.escapeHtml(label) + '</span>' +
+          '<span class="label">' + M.escapeHtml(label) + '</span>' +
         '</a>' +
         '<button type="button" class="mark-del" data-mark="' + i +
           '" aria-label="' + M.escapeHtml(label) + ' 바로가기 삭제">' +
-          M.icon('close', 14) + '</button>' +
+          M.icon('close', 12) + '</button>' +
       '</span>';
     }).join('') +
-    '<button type="button" class="mark-add" id="markAdd">' +
-      M.icon('plus', 14) + '바로가기 추가</button>';
+    '<button type="button" class="mark-add" id="markAdd" aria-label="바로가기 추가" ' +
+      'title="바로가기 추가">' + M.icon('plus', 15) + '</button>';
 
     /* 파비콘을 못 받아오면 첫 글자로 바꾼다 */
     Array.prototype.forEach.call($('marks').querySelectorAll('img'), function (img) {
@@ -293,6 +292,24 @@
         if (img.parentNode) img.parentNode.replaceChild(s, img);
       });
     });
+    fitLabels();
+  }
+
+  /* 이름이 칸을 넘으면 12px 에서 9px 까지 0.5px 씩 줄여 맞춘다 */
+  function fitLabels() {
+    Array.prototype.forEach.call($('marks').querySelectorAll('.label'), function (el) {
+      var size = 12;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.clientWidth && size > 9) {
+        size -= 0.5;
+        el.style.fontSize = size + 'px';
+      }
+    });
+  }
+
+  /* 웹폰트가 늦게 오면 폭이 달라지므로 한 번 더 맞춘다 */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitLabels);
   }
 
   $('marks').addEventListener('click', function (e) {

@@ -250,37 +250,46 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 
 /* ---------- 바로가기 (크롬 북마크바 자리) ---------- */
 .marks{margin-top:var(--sp-lg)}
-.marks-row{display:flex;flex-wrap:wrap;gap:var(--sp-xs);align-items:center}
+.marks-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .mark-item{
-  display:inline-flex;align-items:stretch;
+  position:relative;display:inline-flex;width:104px;   /* 폭을 하나로 통일 */
   background:var(--surface-1);border:1px solid var(--hairline);
-  border-radius:var(--r-md);overflow:hidden;
+  border-radius:var(--r-md);
 }
 .mark-item:hover{background:var(--surface-2);border-color:var(--hairline-strong)}
 .mark-item > a{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:0 4px 0 12px;min-height:38px;
-  color:var(--ink-muted);text-decoration:none;font-size:13px;white-space:nowrap;
+  display:flex;align-items:center;gap:6px;flex:1;min-width:0;
+  padding:0 9px;min-height:32px;border-radius:var(--r-md);
+  color:var(--ink-muted);text-decoration:none;
 }
 .mark-item:hover > a{color:var(--ink)}
-.mark-item img{width:16px;height:16px;border-radius:3px;flex:none}
+.mark-item img{width:14px;height:14px;border-radius:3px;flex:none}
 .mark-item .letter{
-  width:16px;height:16px;border-radius:3px;flex:none;
+  width:14px;height:14px;border-radius:3px;flex:none;
   background:var(--surface-3);color:var(--ink-subtle);
-  display:grid;place-items:center;font-size:10px;font-weight:600;text-transform:uppercase;
+  display:grid;place-items:center;font-size:9px;font-weight:600;text-transform:uppercase;
 }
+/* 글씨가 칸을 넘으면 스크립트가 크기를 줄인다. 그래도 넘치면 말줄임 */
+.mark-item .label{
+  min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  font-size:12px;line-height:1.2;
+}
+/* 삭제 버튼은 겹쳐 띄워 이름이 쓸 폭을 뺏지 않게 한다 */
 .mark-del{
-  width:26px;border:none;background:none;cursor:pointer;
-  color:var(--ink-tertiary);opacity:0;transition:opacity .15s ease;
-  display:grid;place-items:center;padding:0 8px 0 2px;
+  position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:20px;height:20px;padding:0;border:none;border-radius:var(--r-xs);
+  background:var(--surface-3);color:var(--ink-subtle);cursor:pointer;
+  display:grid;place-items:center;opacity:0;transition:opacity .15s ease;
 }
 .mark-item:hover .mark-del,.mark-del:focus-visible{opacity:1}
-.mark-del:hover{color:var(--ink)}
+.mark-del:hover{color:var(--ink);background:var(--hairline-strong)}
 
 .mark-add{
-  display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;
+  margin-left:auto;                                    /* 오른쪽 끝으로 */
+  width:34px;height:34px;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
   background:none;border:1px dashed var(--hairline-strong);border-radius:var(--r-md);
-  color:var(--ink-subtle);font-size:13px;cursor:pointer;
+  color:var(--ink-subtle);cursor:pointer;
 }
 .mark-add:hover{color:var(--ink);border-color:var(--ink-tertiary)}
 
