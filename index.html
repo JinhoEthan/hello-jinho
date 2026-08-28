@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>세계시간 · Meridian</title>
+<title>세계시간 · Hello Jinho!</title>
 <meta name="description" content="기준 도시의 시각을 중심으로 여러 도시의 지금을 나란히 봅니다.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#010102">
@@ -110,52 +110,84 @@
   function refCity() { return cities[0]; }
   function shiftedNow() { return new Date(Date.now() + shiftHours * 3600000); }
 
-  /* ---------- 렌더 ---------- */
-  function renderRail() {
-    var now = shiftedNow();
-    var ref = refCity(), refTz = M.CITIES[ref][0];
-    var refP = M.tzParts(refTz, now);
+  /* 도시별 날씨 캐시: { 도시: {temp, code, isDay} } */
+  var wx = {};
 
+  /* ---------- 렌더 ----------
+     구조를 만드는 buildRail 과 1초마다 도는 updateTimes 를 나눈다.
+     매초 innerHTML 을 갈아치우면 도시마다 SVG 아이콘까지 다시 그리게 된다. */
+  function weatherCell(city) {
+    var w = wx[city];
+    if (w === undefined) {
+      return '<div class="rail-wx"><div class="line">' +
+             '<span class="skeleton">--.-°</span></div></div>';
+    }
+    if (w === null) return '<div class="rail-wx"></div>';
+    var d = M.describe(w.code);
+    return '<div class="rail-wx">' +
+      '<div class="line">' + M.iconFor(d[1], w.isDay, 18) +
+        '<span class="tmp">' + w.temp.toFixed(1) + '°</span></div>' +
+      '<div class="cond">' + d[0] + '</div>' +
+    '</div>';
+  }
+
+  function buildRail() {
     $('rail').innerHTML = cities.map(function (city, idx) {
-      var meta = M.CITIES[city], tz = meta[0];
-      var p = M.tzParts(tz, now);
       var isRef = idx === 0;
-      var delta = M.dayDelta(refP, p);
-      var dayLabel = delta === 0 ? '오늘' : delta > 0 ? '내일' : '어제';
-      var off = isRef ? '기준' : M.formatOffset(M.offsetMinutes(refTz, tz, now));
-
-      var dl = M.daylight(city, now);
-      var band = '';
-      for (var h = 0; h < 24; h++) {
-        var cls = (h === p.hour) ? 'now' : (dl.hours[h] ? 'day' : '');
-        band += '<i class="' + cls + '"></i>';
-      }
-      var legend = dl.setLabel
-        ? '<span>해 뜸 <span class="mono">' + dl.riseLabel + '</span></span>' +
-          '<span>해 짐 <span class="mono">' + dl.setLabel + '</span></span>'
-        : (dl.riseLabel ? '<span>' + dl.riseLabel + '</span>' : '');
-
-      return '<div class="rail-row' + (isRef ? ' is-ref' : '') + '">' +
+      return '<div class="rail-row' + (isRef ? ' is-ref' : '') +
+             '" data-city="' + M.escapeHtml(city) + '">' +
         '<div class="rail-head">' +
           '<div>' +
             '<div class="rail-name">' + M.escapeHtml(city) + '</div>' +
-            '<div class="rail-off">' + off + '</div>' +
+            '<div class="rail-off"></div>' +
           '</div>' +
-          '<div style="display:flex;align-items:flex-start;gap:var(--sp-xs)">' +
-            '<div>' +
-              '<div class="rail-time">' + M.pad2(p.hour) + ':' + M.pad2(p.minute) + '</div>' +
-              '<div class="rail-day">' + dayLabel + '</div>' +
-            '</div>' +
-            (cities.length > 1
-              ? '<button type="button" class="rail-remove" data-remove="' + M.escapeHtml(city) +
-                '" aria-label="' + M.escapeHtml(city) + ' 삭제">' + M.icon('close', 15) + '</button>'
-              : '') +
+          weatherCell(city) +
+          '<div>' +
+            '<div class="rail-time">--:--</div>' +
+            '<div class="rail-day"></div>' +
           '</div>' +
+          (cities.length > 1
+            ? '<button type="button" class="rail-remove" data-remove="' + M.escapeHtml(city) +
+              '" aria-label="' + M.escapeHtml(city) + ' 삭제">' + M.icon('close', 15) + '</button>'
+            : '<span></span>') +
         '</div>' +
-        '<div class="band" role="img" aria-label="' + M.escapeHtml(city) + ' 낮과 밤">' + band + '</div>' +
-        (legend ? '<div class="band-legend">' + legend + '</div>' : '') +
+        '<div class="band" role="img" aria-label="' + M.escapeHtml(city) + ' 낮과 밤">' +
+          new Array(25).join('<i></i>') +
+        '</div>' +
+        '<div class="band-legend"></div>' +
       '</div>';
     }).join('');
+    updateTimes();
+  }
+
+  function updateTimes() {
+    var now = shiftedNow();
+    var refTz = M.CITIES[refCity()][0];
+    var refP = M.tzParts(refTz, now);
+
+    Array.prototype.forEach.call($('rail').children, function (row, idx) {
+      var city = row.getAttribute('data-city');
+      var meta = M.CITIES[city];
+      if (!meta) return;
+      var p = M.tzParts(meta[0], now);
+      var delta = M.dayDelta(refP, p);
+
+      row.querySelector('.rail-off').textContent =
+        idx === 0 ? '기준' : M.formatOffset(M.offsetMinutes(refTz, meta[0], now));
+      row.querySelector('.rail-time').textContent = M.pad2(p.hour) + ':' + M.pad2(p.minute);
+      row.querySelector('.rail-day').textContent =
+        delta === 0 ? '오늘' : delta > 0 ? '내일' : '어제';
+
+      var dl = M.daylight(city, now);
+      var bars = row.querySelectorAll('.band i');
+      for (var h = 0; h < 24; h++) {
+        bars[h].className = (h === p.hour) ? 'now' : (dl.hours[h] ? 'day' : '');
+      }
+      row.querySelector('.band-legend').innerHTML = dl.setLabel
+        ? '<span>해 뜸 <span class="mono">' + dl.riseLabel + '</span></span>' +
+          '<span>해 짐 <span class="mono">' + dl.setLabel + '</span></span>'
+        : (dl.riseLabel ? '<span>' + dl.riseLabel + '</span>' : '');
+    });
   }
 
   function renderHero() {
@@ -173,23 +205,46 @@
 
   function tick() {
     renderHero();
-    renderRail();
+    updateTimes();
   }
 
-  /* ---------- 기준 도시 날씨 ---------- */
-  function loadRefWeather() {
-    var ref = refCity(), meta = M.CITIES[ref];
+  /* ---------- 날씨: 모든 도시를 한 번에 ---------- */
+  function loadWeather() {
+    if (!cities.length) return;
+    var lats = cities.map(function (c) { return M.CITIES[c][1]; }).join(',');
+    var lons = cities.map(function (c) { return M.CITIES[c][2]; }).join(',');
     var badge = $('refWeather');
     badge.hidden = false;
-    badge.innerHTML = '<span class="skeleton">불러오는 중…</span>';
-    M.getJSON('https://api.open-meteo.com/v1/forecast?latitude=' + meta[1] +
-      '&longitude=' + meta[2] + '&current=temperature_2m,weather_code&timezone=' +
-      encodeURIComponent(meta[0]))
-      .then(function (d) {
-        var c = d.current, w = M.describe(c.weather_code);
-        badge.textContent = w[0] + ' ' + c.temperature_2m.toFixed(1) + '°';
+    if (wx[refCity()] === undefined) {
+      badge.innerHTML = '<span class="skeleton">불러오는 중…</span>';
+    }
+
+    M.getJSON('https://api.open-meteo.com/v1/forecast?latitude=' + lats +
+      '&longitude=' + lons + '&current=temperature_2m,weather_code,is_day&timezone=auto')
+      .then(function (data) {
+        var list = Array.isArray(data) ? data : [data];
+        cities.forEach(function (city, i) {
+          var d = list[i];
+          if (!d || !d.current) { wx[city] = null; return; }
+          wx[city] = {
+            temp: d.current.temperature_2m,
+            code: d.current.weather_code,
+            isDay: d.current.is_day === 1
+          };
+        });
+        var r = wx[refCity()];
+        if (r) {
+          badge.textContent = M.describe(r.code)[0] + ' ' + r.temp.toFixed(1) + '°';
+        } else {
+          badge.hidden = true;
+        }
+        buildRail();
       })
-      .catch(function () { badge.hidden = true; });
+      .catch(function () {
+        cities.forEach(function (c) { if (wx[c] === undefined) wx[c] = null; });
+        badge.hidden = true;
+        buildRail();
+      });
   }
 
   /* ---------- 이벤트 ---------- */
@@ -237,7 +292,9 @@
     cities.push(name);
     M.save('cities', cities);
     input.value = '';
-    tick();
+    buildRail();          // 새 도시는 날씨가 올 때까지 자리만 잡아 둔다
+    renderHero();
+    loadWeather();
   });
 
   $('rail').addEventListener('click', function (e) {
@@ -246,9 +303,11 @@
     var name = btn.getAttribute('data-remove');
     var wasRef = cities[0] === name;
     cities = cities.filter(function (c) { return c !== name; });
+    delete wx[name];
     M.save('cities', cities);
-    tick();
-    if (wasRef) loadRefWeather();
+    buildRail();
+    renderHero();
+    if (wasRef) loadWeather();
   });
 
   $('copyUrl').addEventListener('click', function () {
@@ -266,10 +325,11 @@
   $('focusAdd').addEventListener('click', function () { $('addCity').focus(); });
 
   /* ---------- 시작 ---------- */
-  tick();
-  loadRefWeather();
+  buildRail();
+  renderHero();
+  loadWeather();
   setInterval(tick, 1000);
-  setInterval(loadRefWeather, 15 * 60 * 1000);
+  setInterval(loadWeather, 15 * 60 * 1000);
 })();
 </script>
 </body>

@@ -1,4 +1,4 @@
-/* Meridian — shared helpers. No dependencies. */
+/* Hello Jinho! — shared helpers. No dependencies. */
 (function (global) {
   'use strict';
 
@@ -244,11 +244,11 @@
 
   /* ---------- shared chrome ---------- */
   function nav(current) {
-    var items = [['index.html', '세계시간'], ['weather.html', '날씨'], ['exchange.html', '환율']];
+    var items = [['index.html', '세계시간'], ['exchange.html', '환율']];
     return '<a class="skip" href="#main">본문으로 건너뛰기</a>' +
       '<div class="wrap"><header class="nav">' +
       '<a class="brand" href="index.html" translate="no">' +
-      '<span aria-hidden="true"></span>Meridian</a>' +
+      '<span aria-hidden="true"></span>Hello Jinho!</a>' +
       '<nav class="nav-links" aria-label="주요">' +
       items.map(function (it) {
         return '<a href="' + it[0] + '"' + (it[1] === current ? ' aria-current="page"' : '') + '>' + it[1] + '</a>';
@@ -260,7 +260,7 @@
 
   function foot(source) {
     return '<div class="wrap"><footer class="foot">' +
-      '<span>Meridian</span>' +
+      '<span translate="no">Hello Jinho!</span>' +
       '<span class="src">' + source + '</span>' +
       '</footer></div>';
   }
