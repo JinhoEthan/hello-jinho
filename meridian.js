@@ -218,16 +218,17 @@
     close: '<path d="M18 6L6 18M6 6l12 12"/>',
     swap:  '<path d="M7 4v16l-3-3M17 20V4l3 3"/>'
   };
-  function icon(name, size) {
+  function icon(name, size, cls) {
     var p = PATHS[name] || PATHS.cloud;
-    return '<svg class="i" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" ' +
-      'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
-      'stroke-linejoin="round" aria-hidden="true" focusable="false">' + p + '</svg>';
+    return '<svg class="i' + (cls ? ' ' + cls : '') + '" width="' + size + '" height="' + size +
+      '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      p + '</svg>';
   }
-  /* 밤이면 맑음 아이콘을 달로 바꾼다 */
+  /* 밤이면 맑음 아이콘을 달로 바꾸고, 날씨별 색 클래스를 붙인다 */
   function iconFor(kind, isDay, size) {
-    if (!isDay && (kind === 'clear' || kind === 'partly')) return icon('moon', size);
-    return icon(kind, size);
+    var name = (!isDay && (kind === 'clear' || kind === 'partly')) ? 'moon' : kind;
+    return icon(name, size, 'wx-' + name);
   }
 
   /* ---------- numbers ---------- */

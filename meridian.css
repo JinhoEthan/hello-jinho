@@ -9,6 +9,13 @@
   --canvas:#010102; --surface-1:#0f1011; --surface-2:#141516; --surface-3:#18191a;
   --hairline:#23252a; --hairline-strong:#34343a; --hairline-tertiary:#3e3e44;
 
+  /* 날씨 아이콘 색. 이전 버전 index.html 의 다크모드 팔레트를 이어받았다.
+     DESIGN.md 는 액센트 하나만 쓰라고 하지만, 날씨는 색이 곧 정보라
+     여기서만 예외를 둔다. UI 요소에는 쓰지 않는다. */
+  --wx-sun:#E9A83A; --wx-partly:#C9A25E; --wx-moon:#93A2B8;
+  --wx-cloud:#8B94A2; --wx-rain:#5AA3E0; --wx-snow:#9CC4E6;
+  --wx-storm:#D98C3A; --wx-mist:#7E8894;
+
   /* radius */
   --r-xs:4px; --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-pill:9999px;
 
@@ -257,7 +264,17 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 /* 도시별 날씨: 아이콘 + 기온 한 줄, 그 아래 상태 */
 .rail-wx{text-align:right;min-width:0}
 .rail-wx .line{display:flex;align-items:center;justify-content:flex-end;gap:6px}
-.rail-wx svg{color:var(--ink-subtle);flex:none}
+.rail-wx svg{flex:none}
+
+/* 날씨별 아이콘 색 */
+.wx-clear{color:var(--wx-sun)}
+.wx-partly{color:var(--wx-partly)}
+.wx-moon{color:var(--wx-moon)}
+.wx-cloud{color:var(--wx-cloud)}
+.wx-rain{color:var(--wx-rain)}
+.wx-snow{color:var(--wx-snow)}
+.wx-storm{color:var(--wx-storm)}
+.wx-mist{color:var(--wx-mist)}
 .rail-wx .tmp{
   font-family:var(--mono);font-size:18px;font-variant-numeric:tabular-nums;color:var(--ink-muted);
 }
