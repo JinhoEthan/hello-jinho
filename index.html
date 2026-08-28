@@ -48,6 +48,19 @@
           <div class="slider-ticks" aria-hidden="true">
             <span>-24</span><span>-12</span><span>0</span><span>+12</span><span>+24</span>
           </div>
+
+          <nav class="marks" aria-label="바로가기">
+            <div class="marks-row" id="marks"></div>
+            <form class="mark-form" id="markForm" hidden>
+              <label class="field-label" for="markName" hidden>이름</label>
+              <input class="input n" id="markName" placeholder="이름 (선택)" autocomplete="off" spellcheck="false">
+              <label class="field-label" for="markUrl" hidden>주소</label>
+              <input class="input u" id="markUrl" type="url" placeholder="예: naver.com" autocomplete="off" spellcheck="false">
+              <button type="submit" class="btn btn-primary">저장</button>
+              <button type="button" class="btn btn-tertiary" id="markCancel">취소</button>
+            </form>
+            <p class="error" id="markError" role="alert" hidden></p>
+          </nav>
       </section>
 
      </div>
@@ -247,6 +260,80 @@
       });
   }
 
+  /* ---------- 바로가기 ---------- */
+  var marks = M.load('bookmarks', M.DEFAULT_BOOKMARKS).filter(function (b) {
+    return b && b.url;
+  });
+
+  function renderMarks() {
+    $('marks').innerHTML = marks.map(function (b, i) {
+      var label = b.name || M.hostOf(b.url);
+      return '<span class="mark-item">' +
+        '<a href="' + M.escapeHtml(b.url) + '">' +
+          '<img src="' + M.escapeHtml(M.faviconUrl(b.url)) + '" alt="" ' +
+            'width="16" height="16" loading="lazy" data-letter="' +
+            M.escapeHtml(label.slice(0, 1)) + '">' +
+          '<span>' + M.escapeHtml(label) + '</span>' +
+        '</a>' +
+        '<button type="button" class="mark-del" data-mark="' + i +
+          '" aria-label="' + M.escapeHtml(label) + ' 바로가기 삭제">' +
+          M.icon('close', 14) + '</button>' +
+      '</span>';
+    }).join('') +
+    '<button type="button" class="mark-add" id="markAdd">' +
+      M.icon('plus', 14) + '바로가기 추가</button>';
+
+    /* 파비콘을 못 받아오면 첫 글자로 바꾼다 */
+    Array.prototype.forEach.call($('marks').querySelectorAll('img'), function (img) {
+      img.addEventListener('error', function () {
+        var s = document.createElement('span');
+        s.className = 'letter';
+        s.textContent = img.getAttribute('data-letter') || '?';
+        s.setAttribute('aria-hidden', 'true');
+        if (img.parentNode) img.parentNode.replaceChild(s, img);
+      });
+    });
+  }
+
+  $('marks').addEventListener('click', function (e) {
+    var add = e.target.closest('#markAdd');
+    if (add) {
+      $('markForm').hidden = false;
+      $('markError').hidden = true;
+      $('markUrl').focus();
+      return;
+    }
+    var del = e.target.closest('[data-mark]');
+    if (!del) return;
+    marks.splice(parseInt(del.getAttribute('data-mark'), 10), 1);
+    M.save('bookmarks', marks);
+    renderMarks();
+  });
+
+  $('markForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('markError');
+    var url = M.normalizeUrl($('markUrl').value);
+    if (!url) {
+      err.hidden = false;
+      err.textContent = '주소를 확인해 주세요. naver.com 처럼 입력하시면 됩니다.';
+      $('markUrl').focus();
+      return;
+    }
+    err.hidden = true;
+    marks.push({ name: $('markName').value.trim(), url: url });
+    M.save('bookmarks', marks);
+    $('markName').value = '';
+    $('markUrl').value = '';
+    $('markForm').hidden = true;
+    renderMarks();
+  });
+
+  $('markCancel').addEventListener('click', function () {
+    $('markForm').hidden = true;
+    $('markError').hidden = true;
+  });
+
   /* ---------- 이벤트 ---------- */
   $('shiftRange').addEventListener('input', function (e) {
     shiftHours = parseFloat(e.target.value);
@@ -325,6 +412,7 @@
   $('focusAdd').addEventListener('click', function () { $('addCity').focus(); });
 
   /* ---------- 시작 ---------- */
+  renderMarks();
   buildRail();
   renderHero();
   loadWeather();

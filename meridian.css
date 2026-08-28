@@ -248,6 +248,47 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   font-family:var(--mono);font-size:11px;color:var(--ink-tertiary);
 }
 
+/* ---------- 바로가기 (크롬 북마크바 자리) ---------- */
+.marks{margin-top:var(--sp-lg)}
+.marks-row{display:flex;flex-wrap:wrap;gap:var(--sp-xs);align-items:center}
+.mark-item{
+  display:inline-flex;align-items:stretch;
+  background:var(--surface-1);border:1px solid var(--hairline);
+  border-radius:var(--r-md);overflow:hidden;
+}
+.mark-item:hover{background:var(--surface-2);border-color:var(--hairline-strong)}
+.mark-item > a{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:0 4px 0 12px;min-height:38px;
+  color:var(--ink-muted);text-decoration:none;font-size:13px;white-space:nowrap;
+}
+.mark-item:hover > a{color:var(--ink)}
+.mark-item img{width:16px;height:16px;border-radius:3px;flex:none}
+.mark-item .letter{
+  width:16px;height:16px;border-radius:3px;flex:none;
+  background:var(--surface-3);color:var(--ink-subtle);
+  display:grid;place-items:center;font-size:10px;font-weight:600;text-transform:uppercase;
+}
+.mark-del{
+  width:26px;border:none;background:none;cursor:pointer;
+  color:var(--ink-tertiary);opacity:0;transition:opacity .15s ease;
+  display:grid;place-items:center;padding:0 8px 0 2px;
+}
+.mark-item:hover .mark-del,.mark-del:focus-visible{opacity:1}
+.mark-del:hover{color:var(--ink)}
+
+.mark-add{
+  display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;
+  background:none;border:1px dashed var(--hairline-strong);border-radius:var(--r-md);
+  color:var(--ink-subtle);font-size:13px;cursor:pointer;
+}
+.mark-add:hover{color:var(--ink);border-color:var(--ink-tertiary)}
+
+.mark-form{display:flex;gap:var(--sp-xs);margin-top:var(--sp-xs);flex-wrap:wrap}
+.mark-form .input{min-height:40px;padding:8px 10px;font-size:14px}
+.mark-form .n{flex:0 1 130px}
+.mark-form .u{flex:1 1 200px;min-width:0}
+
 /* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다 */
 .rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-xl)}
 .rail-row{padding:var(--sp-md) 0;border-bottom:1px solid var(--hairline);min-width:0}

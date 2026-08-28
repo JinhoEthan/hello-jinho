@@ -56,6 +56,14 @@
   var DEFAULT_CITIES = ['서울', '방콕', '두바이', '런던', '뉴욕', '마이애미', '로스앤젤레스'];
   var DEFAULT_CURRENCIES = ['USD', 'EUR', 'JPY', 'CNY', 'GBP', 'AUD'];
 
+  /* 시작 페이지 바로가기. 페이지에서 직접 고칠 수 있고, 여기 값은 처음 열 때의 기본값이다. */
+  var DEFAULT_BOOKMARKS = [
+    { name: '네이버',   url: 'https://www.naver.com' },
+    { name: 'Gmail',    url: 'https://mail.google.com' },
+    { name: '캘린더',   url: 'https://calendar.google.com' },
+    { name: 'YouTube',  url: 'https://www.youtube.com' }
+  ];
+
   var CURRENCY_NAMES = {
     USD: '미국 달러', EUR: '유로', JPY: '일본 엔', CNY: '중국 위안',
     GBP: '영국 파운드', AUD: '호주 달러', CAD: '캐나다 달러', CHF: '스위스 프랑',
@@ -217,6 +225,7 @@
     storm: '<path d="M7 15a4 4 0 0 1 0-8a5 5 0 0 1 9.3.9h.7a3.5 3.5 0 0 1 0 7"/><path d="M12.5 16l-2 3.5h3l-2 3.5"/>',
     mist:  '<path d="M4 8h10M8 12h11M4 16h9M17 16h2"/>',
     close: '<path d="M18 6L6 18M6 6l12 12"/>',
+    plus:  '<path d="M12 5v14M5 12h14"/>',
     swap:  '<path d="M7 4v16l-3-3M17 20V4l3 3"/>'
   };
   function icon(name, size, cls) {
@@ -291,10 +300,36 @@
     }).join(' ');
   }
 
+  /* ---------- 바로가기 ---------- */
+  /* 주소를 정규화한다. "naver.com" 처럼 앞이 빠져도 받아준다. */
+  function normalizeUrl(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return null;
+    if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    try {
+      var u = new URL(s);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+      if (u.hostname.indexOf('.') === -1) return null;
+      return u.href;
+    } catch (e) { return null; }
+  }
+
+  function hostOf(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ''); }
+    catch (e) { return url; }
+  }
+
+  /* 파비콘은 DuckDuckGo 아이콘 서비스를 쓴다. 실패하면 첫 글자로 대체한다. */
+  function faviconUrl(url) {
+    return 'https://icons.duckduckgo.com/ip3/' + encodeURIComponent(hostOf(url)) + '.ico';
+  }
+
   global.M = {
     CITIES: CITIES,
     DEFAULT_CITIES: DEFAULT_CITIES,
     DEFAULT_CURRENCIES: DEFAULT_CURRENCIES,
+    DEFAULT_BOOKMARKS: DEFAULT_BOOKMARKS,
+    normalizeUrl: normalizeUrl, hostOf: hostOf, faviconUrl: faviconUrl,
     CURRENCY_NAMES: CURRENCY_NAMES,
     PER_100: PER_100,
     load: load, save: save,
