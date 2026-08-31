@@ -256,10 +256,9 @@
   /* ---------- shared chrome ---------- */
   function nav(current) {
     var items = [['index.html', '세계시간'], ['exchange.html', '환율']];
+    /* 브랜드는 내비게이션이 아니라 각 페이지 머리에 둔다 (brandMark) */
     return '<a class="skip" href="#main">본문으로 건너뛰기</a>' +
       '<div class="wrap"><header class="nav">' +
-      '<a class="brand" href="index.html" translate="no">' +
-      '<span aria-hidden="true"></span>Hello Jinho!</a>' +
       '<nav class="nav-links" aria-label="주요">' +
       items.map(function (it) {
         return '<a href="' + it[0] + '"' + (it[1] === current ? ' aria-current="page"' : '') + '>' + it[1] + '</a>';
@@ -267,6 +266,12 @@
       '</nav>' +
       '<div class="nav-actions" id="navActions"></div>' +
       '</header></div>';
+  }
+
+  /* 페이지 머리에 놓는 브랜드 표기 */
+  function brandMark() {
+    return '<p class="brand-hero" translate="no">' +
+      '<span aria-hidden="true"></span>Hello Jinho!</p>';
   }
 
   function foot(source) {
@@ -338,6 +343,6 @@
     daylight: daylight, describe: describe,
     icon: icon, iconFor: iconFor,
     num: num, rateDigits: rateDigits, escapeHtml: escapeHtml,
-    nav: nav, foot: foot, getJSON: getJSON, polyline: polyline
+    nav: nav, brandMark: brandMark, foot: foot, getJSON: getJSON, polyline: polyline
   };
 })(window);

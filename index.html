@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>세계시간 · Hello Jinho!</title>
+<title>Hello Jinho!</title>
 <meta name="description" content="기준 도시의 시각을 중심으로 여러 도시의 지금을 나란히 봅니다.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#010102">
@@ -23,6 +23,7 @@
      <div class="clockbar">
 
       <section aria-labelledby="refHeading">
+        <div id="brand"></div>
         <p class="ref-city" id="refHeading">
           <span id="refName">서울</span> · <span id="refCountry">대한민국</span>
         </p>
@@ -92,6 +93,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   document.getElementById('chrome').innerHTML = M.nav('세계시간');
+  document.getElementById('brand').innerHTML = M.brandMark();
   document.getElementById('pagefoot').innerHTML =
     M.foot('날씨 <a href="https://open-meteo.com/">Open-Meteo</a>');
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>환율 · Hello Jinho!</title>
+<title>Hello Jinho!</title>
 <meta name="description" content="원화 기준 환율과 통화 변환. 유럽중앙은행 고시 기준.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#010102">
@@ -21,6 +21,7 @@
     <div class="fx-hero fx-split">
 
       <section aria-labelledby="convHeading">
+        <div id="brand"></div>
         <h1 class="t-display" id="convHeading" style="max-width:14ch">얼마인지 바로 봅니다</h1>
 
         <div class="conv" style="margin-top:var(--sp-xl)">
@@ -85,6 +86,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   document.getElementById('chrome').innerHTML = M.nav('환율');
+  document.getElementById('brand').innerHTML = M.brandMark();
   document.getElementById('pagefoot').innerHTML =
     M.foot('환율 <a href="https://frankfurter.dev/">Frankfurter</a> · 유럽중앙은행 고시');
   $('navActions').innerHTML =

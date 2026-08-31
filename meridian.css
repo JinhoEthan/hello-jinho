@@ -94,12 +94,16 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   border-bottom:1px solid var(--hairline);font-size:14px;
   position:sticky;top:0;background:var(--canvas);z-index:var(--z-nav);
 }
-.brand{
-  display:flex;align-items:center;gap:var(--sp-xs);
-  font-weight:600;font-size:15px;letter-spacing:-.4px;text-decoration:none;color:var(--ink);
+/* 브랜드: 내비게이션이 아니라 각 페이지 머리에 놓는다 */
+.brand-hero{
+  display:flex;align-items:center;gap:10px;
+  font-size:26px;font-weight:600;line-height:1.2;letter-spacing:-.7px;color:var(--ink);
+  margin-bottom:var(--sp-lg);
 }
-.brand span{width:14px;height:14px;border-radius:var(--r-xs);background:var(--primary);display:block}
-.nav-links{display:flex;gap:var(--sp-lg);margin-left:var(--sp-md)}
+.brand-hero span{
+  width:17px;height:17px;border-radius:var(--r-xs);background:var(--primary);flex:none;
+}
+.nav-links{display:flex;gap:var(--sp-lg)}
 .nav-links a{color:var(--ink-subtle);text-decoration:none;padding:4px 0}
 .nav-links a:hover{color:var(--ink-muted)}
 .nav-links a[aria-current="page"]{color:var(--ink)}
