@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hello Jinho!</title>
-<meta name="description" content="원화 기준 환율과 통화 변환. 유럽중앙은행 고시 기준.">
+<meta name="description" content="원화 기준 환율과 통화 변환. 주말 포함 매일 갱신.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#010102">
+<link rel="preconnect" href="https://open.er-api.com" crossorigin>
 <link rel="preconnect" href="https://api.frankfurter.dev" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -86,7 +87,7 @@
   document.getElementById('chrome').innerHTML = M.nav('환율');
   document.getElementById('brand').innerHTML = M.brandMark();
   document.getElementById('pagefoot').innerHTML =
-    M.foot('환율 <a href="https://frankfurter.dev/">Frankfurter</a> · 유럽중앙은행 고시');
+    M.foot('환율 <a href="https://www.exchangerate-api.com">exchangerate-api</a> · 추이 <a href="https://frankfurter.dev/">ECB</a>');
   $('navActions').innerHTML =
     '<button type="button" class="btn btn-tertiary" id="copyUrl">주소 복사</button>';
   $('swap').innerHTML = M.icon('swap', 16);
@@ -106,6 +107,7 @@
   var krwPer = {};   // 통화 1단위당 원화
   var series = {};   // 통화별 30일 시계열 [[날짜, 원화], ...]
   var asOfDate = '';
+  var asOfStamp = null;   /* 최신 소스가 준 갱신 시각 (ms) */
   var available = [];
 
   function name(code) { return M.CURRENCY_NAMES[code] || code; }
@@ -174,8 +176,18 @@
     var one = convert(1, from, to);
     if (one === null) return;
     $('rateLine').innerHTML = '1 ' + from + ' = <b>' + M.num(one, M.rateDigits(one)) + '</b> ' + to;
-    var p = asOfDate.split('-');
-    $('asOf').textContent = '기준일 ' + (+p[1]) + '월 ' + (+p[2]) + '일 · 유럽중앙은행 고시';
+
+    if (asOfStamp) {
+      var d = new Date(asOfStamp);
+      var f = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      });
+      $('asOf').textContent = '기준 ' + f.format(d) + ' · 하루 한 번 갱신';
+    } else if (asOfDate) {
+      var p = asOfDate.split('-');
+      $('asOf').textContent = '기준일 ' + (+p[1]) + '월 ' + (+p[2]) + '일 · 유럽중앙은행 고시';
+    }
   }
 
   /* ---------- 추이 ---------- */
@@ -334,24 +346,60 @@
             (series[code] = series[code] || []).push([date, krw / v]);
           });
         });
+        /* 과거는 ECB, 현재는 최신 소스이므로 마지막 점을 현재 값으로 이어 붙인다 */
+        if (asOfStamp) {
+          var today = new Date(asOfStamp).toISOString().slice(0, 10);
+          picks.forEach(function (code) {
+            var rows = series[code];
+            if (!rows || !krwPer[code]) return;
+            if (rows[rows.length - 1][0] === today) rows.pop();
+            rows.push([today, krwPer[code]]);
+          });
+        }
       })
       .catch(function () { series = {}; });
+  }
+
+  /* 현재 환율은 주말에도 갱신되는 exchangerate-api 를 쓴다. ECB 는 영업일만
+     고시해서 월요일 아침에 금요일 값이 그대로 나온다. 과거 30일치는 ECB 만
+     제공하므로 그래프는 계속 ECB 를 쓴다. */
+  var LIVE = 'https://open.er-api.com/v6/latest/USD';
+
+  function ratesFromUsdBase(r) {
+    var krw = r.KRW;
+    if (!krw) return null;
+    var out = { USD: krw };
+    Object.keys(r).forEach(function (code) {
+      if (code !== 'KRW' && r[code]) out[code] = krw / r[code];
+    });
+    return out;
   }
 
   function start() {
     $('fxError').hidden = true;
     Promise.all([
       M.getJSON(API + 'currencies'),
+      /* 최신 소스가 죽으면 ECB 로 되돌아간다 */
+      M.getJSON(LIVE).catch(function () { return null; }),
       M.getJSON(API + 'latest?base=EUR')
     ]).then(function (res) {
       available = Object.keys(res[0]);
-      asOfDate = res[1].date;
-      var eur = res[1].rates, krw = eur.KRW;
-      if (!krw) throw new Error('KRW 없음');
-      krwPer = { EUR: krw };
-      Object.keys(eur).forEach(function (code) {
-        if (code !== 'KRW') krwPer[code] = krw / eur[code];
-      });
+      var live = res[1], liveRates = live && live.rates ? ratesFromUsdBase(live.rates) : null;
+
+      if (liveRates) {
+        krwPer = liveRates;
+        asOfStamp = live.time_last_update_unix ? live.time_last_update_unix * 1000 : null;
+        asOfDate = '';
+      } else {
+        asOfDate = res[2].date;
+        asOfStamp = null;
+        var eur = res[2].rates, krw = eur.KRW;
+        if (!krw) throw new Error('KRW 없음');
+        krwPer = { EUR: krw };
+        Object.keys(eur).forEach(function (code) {
+          if (code !== 'KRW') krwPer[code] = krw / eur[code];
+        });
+      }
       picks = picks.filter(function (c) { return krwPer[c]; });
       if (!picks.length) picks = M.DEFAULT_CURRENCIES.filter(function (c) { return krwPer[c]; });
       fillSelects();
