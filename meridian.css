@@ -96,12 +96,12 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 }
 /* 브랜드: 내비게이션이 아니라 각 페이지 머리에 놓는다 */
 .brand-hero{
-  display:flex;align-items:center;gap:10px;
-  font-size:26px;font-weight:600;line-height:1.2;letter-spacing:-.7px;color:var(--ink);
+  display:flex;align-items:center;gap:12px;
+  font-size:34px;font-weight:600;line-height:1.15;letter-spacing:-1px;color:var(--ink);
   margin-bottom:var(--sp-lg);
 }
 .brand-hero span{
-  width:17px;height:17px;border-radius:var(--r-xs);background:var(--primary);flex:none;
+  width:21px;height:21px;border-radius:var(--r-sm);background:var(--primary);flex:none;
 }
 .nav-links{display:flex;gap:var(--sp-lg)}
 .nav-links a{color:var(--ink-subtle);text-decoration:none;padding:4px 0}
@@ -443,7 +443,6 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .swap:hover{color:var(--ink);border-color:var(--hairline-strong)}
 .fx-rate{margin-top:var(--sp-lg);font-size:15px;color:var(--ink-muted)}
 .fx-rate b{font-family:var(--mono);font-weight:500;color:var(--ink)}
-.fx-asof{font-size:13px;color:var(--ink-tertiary);margin-top:6px}
 
 .trend{background:var(--surface-1);border:1px solid var(--hairline);border-radius:var(--r-xl);padding:var(--sp-lg)}
 .trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--sp-md)}

@@ -32,7 +32,6 @@
         </p>
         <div class="hero-meta">
           <span class="date" id="refDate">&nbsp;</span>
-          <span class="badge" id="refWeather" aria-live="polite" hidden></span>
         </div>
       </section>
 
@@ -227,11 +226,6 @@
     if (!cities.length) return;
     var lats = cities.map(function (c) { return M.CITIES[c][1]; }).join(',');
     var lons = cities.map(function (c) { return M.CITIES[c][2]; }).join(',');
-    var badge = $('refWeather');
-    badge.hidden = false;
-    if (wx[refCity()] === undefined) {
-      badge.innerHTML = '<span class="skeleton">불러오는 중…</span>';
-    }
 
     M.getJSON('https://api.open-meteo.com/v1/forecast?latitude=' + lats +
       '&longitude=' + lons + '&current=temperature_2m,weather_code,is_day&timezone=auto')
@@ -246,17 +240,10 @@
             isDay: d.current.is_day === 1
           };
         });
-        var r = wx[refCity()];
-        if (r) {
-          badge.textContent = M.describe(r.code)[0] + ' ' + r.temp.toFixed(1) + '°';
-        } else {
-          badge.hidden = true;
-        }
         buildRail();
       })
       .catch(function () {
         cities.forEach(function (c) { if (wx[c] === undefined) wx[c] = null; });
-        badge.hidden = true;
         buildRail();
       });
   }
