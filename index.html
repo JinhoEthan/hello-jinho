@@ -266,7 +266,11 @@
           'width="14" height="14" loading="lazy" data-letter="' +
           M.escapeHtml(label.slice(0, 1)) + '">';
       return '<span class="mark-item">' +
-        '<a href="' + M.escapeHtml(b.url) + '" title="' + M.escapeHtml(label) + '">' +
+        /* 시작 페이지는 그대로 두고 새 탭에서 연다.
+           noopener 가 없으면 열린 쪽에서 window.opener 로 이 페이지를 건드릴 수 있다. */
+        '<a href="' + M.escapeHtml(b.url) + '" target="_blank" rel="noopener noreferrer"' +
+          ' title="' + M.escapeHtml(label) + '"' +
+          ' aria-label="' + M.escapeHtml(label) + ' (새 탭에서 열기)">' +
           glyph + '<span class="label">' + M.escapeHtml(label) + '</span>' +
         '</a>' +
         '<span class="mark-tools">' +
