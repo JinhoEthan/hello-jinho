@@ -135,28 +135,18 @@
     updateRateLine();
   }
 
-  /* 금액이 칸보다 길면 글씨를 줄인다. 1,374.55 처럼 자릿수가 늘면 잘리기 때문이다. */
-  var ruler = document.createElement('span');
-  ruler.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;left:-9999px;top:0';
-  document.body.appendChild(ruler);
-
+  /* 금액이 칸보다 길면 글씨를 줄인다. 1,374.55 처럼 자릿수가 늘면 잘리기 때문이다.
+     별도 측정용 요소를 두면 자간(-0.04em)이 글씨 크기에 따라 달라지는 걸 못 따라가
+     실제보다 좁게 재게 된다. 그래서 입력칸 자신을 줄여 가며 직접 확인한다. */
   function fitAmount(el) {
     el.style.fontSize = '';                    /* 반응형 기본값으로 되돌린 뒤 다시 잰다 */
-    var cs = getComputedStyle(el);
-    var size = parseFloat(cs.fontSize);
-    var avail = el.clientWidth - 2;
-    if (!avail || avail <= 0) return;
-    ruler.style.fontFamily = cs.fontFamily;
-    ruler.style.fontWeight = cs.fontWeight;
-    ruler.style.letterSpacing = cs.letterSpacing;
-    ruler.style.fontVariantNumeric = cs.fontVariantNumeric;
-    ruler.textContent = el.value || '0';
-    ruler.style.fontSize = size + 'px';
-    while (ruler.offsetWidth > avail && size > 20) {
-      size -= 1;
-      ruler.style.fontSize = size + 'px';
-    }
+    var size = parseFloat(getComputedStyle(el).fontSize);
+    if (!el.clientWidth) return;
     el.style.fontSize = size + 'px';
+    while (el.scrollWidth > el.clientWidth && size > 18) {
+      size -= 1;
+      el.style.fontSize = size + 'px';
+    }
   }
 
   function fitAmounts() { fitAmount($('fromAmt')); fitAmount($('toAmt')); }

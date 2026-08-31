@@ -515,11 +515,25 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   .rail-wx{grid-row:2;grid-column:1/-1;text-align:left;display:flex;align-items:center;gap:8px}
   .rail-wx .line{justify-content:flex-start}
   .rail-wx .cond{margin-top:0}
-  .rail-remove{opacity:1 !important;width:40px;height:40px}
+  /* 기본 규칙이 .rail-row .rail-remove 라 선택자를 같은 무게로 맞춰야 이긴다 */
+  .rail-row .rail-remove{opacity:1;width:40px;height:40px}
   .shift-reset{min-height:40px;display:inline-flex;align-items:center}
   .nav-links a{padding:10px 0}
+  /* 폭이 좁으면 바로가기를 두 칸으로 넓혀 편집·삭제 버튼이 이름을 가리지 않게 한다 */
+  .mark-item{width:calc(50% - 3px)}
+  .mark-add{width:44px;height:44px}
+}
+/* hover 가 없는 화면에서는 지우기·편집이 늘 보여야 한다. 안 그러면 누를 방법이 없다. */
+@media (hover: none){
+  .mark-tools{opacity:1}
+  .mark-tools button{width:34px;height:34px}
+  .mark-item > a{padding-right:74px}
+  .rail-row .rail-remove{opacity:1;width:40px;height:40px}
+  .fx-card .rail-remove{opacity:1;width:36px;height:36px}
 }
 @media (pointer: coarse){
-  .rail-remove{opacity:1;width:40px;height:40px}
+  .leg-field select{min-height:44px}
+  .mark-add{width:44px;height:44px}
+  .rail-row .rail-remove{opacity:1;width:40px;height:40px}
   .shift-reset{min-height:40px;display:inline-flex;align-items:center}
 }
