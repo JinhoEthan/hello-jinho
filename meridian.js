@@ -226,6 +226,7 @@
     mist:  '<path d="M4 8h10M8 12h11M4 16h9M17 16h2"/>',
     close: '<path d="M18 6L6 18M6 6l12 12"/>',
     plus:  '<path d="M12 5v14M5 12h14"/>',
+    pencil:'<path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3"/><path d="M13.5 6.5l3 3"/>',
     swap:  '<path d="M7 4v16l-3-3M17 20V4l3 3"/>'
   };
   function icon(name, size, cls) {

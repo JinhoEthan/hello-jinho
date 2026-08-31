@@ -256,7 +256,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .marks{margin-top:var(--sp-lg)}
 .marks-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .mark-item{
-  position:relative;display:inline-flex;width:104px;   /* 폭을 하나로 통일 */
+  position:relative;display:inline-flex;width:88px;    /* 폭을 하나로 통일 */
   background:var(--surface-1);border:1px solid var(--hairline);
   border-radius:var(--r-md);
 }
@@ -278,15 +278,23 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
   font-size:12px;line-height:1.2;
 }
-/* 삭제 버튼은 겹쳐 띄워 이름이 쓸 폭을 뺏지 않게 한다 */
-.mark-del{
-  position:absolute;right:3px;top:50%;transform:translateY(-50%);
-  width:20px;height:20px;padding:0;border:none;border-radius:var(--r-xs);
-  background:var(--surface-3);color:var(--ink-subtle);cursor:pointer;
-  display:grid;place-items:center;opacity:0;transition:opacity .15s ease;
+/* 직접 지정한 아이콘(이모지 등) */
+.mark-item .emoji{
+  width:14px;height:14px;flex:none;font-size:13px;line-height:1;
+  display:grid;place-items:center;
 }
-.mark-item:hover .mark-del,.mark-del:focus-visible{opacity:1}
-.mark-del:hover{color:var(--ink);background:var(--hairline-strong)}
+/* 편집·삭제 버튼은 겹쳐 띄워 이름이 쓸 폭을 뺏지 않게 한다 */
+.mark-tools{
+  position:absolute;right:2px;top:50%;transform:translateY(-50%);
+  display:flex;gap:2px;opacity:0;transition:opacity .15s ease;
+}
+.mark-item:hover .mark-tools,.mark-tools:focus-within{opacity:1}
+.mark-tools button{
+  width:19px;height:19px;padding:0;border:none;border-radius:var(--r-xs);
+  background:var(--surface-3);color:var(--ink-subtle);cursor:pointer;
+  display:grid;place-items:center;
+}
+.mark-tools button:hover{color:var(--ink);background:var(--hairline-strong)}
 
 .mark-add{
   margin-left:auto;                                    /* 오른쪽 끝으로 */
@@ -299,8 +307,10 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 
 .mark-form{display:flex;gap:var(--sp-xs);margin-top:var(--sp-xs);flex-wrap:wrap}
 .mark-form .input{min-height:40px;padding:8px 10px;font-size:14px}
-.mark-form .n{flex:0 1 130px}
+.mark-form .i{flex:0 0 66px;text-align:center}
+.mark-form .n{flex:0 1 120px}
 .mark-form .u{flex:1 1 200px;min-width:0}
+.mark-form .add-hint{flex:1 0 100%;margin-top:2px}
 
 /* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다 */
 .rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-xl)}
