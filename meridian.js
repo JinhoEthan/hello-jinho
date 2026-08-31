@@ -271,8 +271,7 @@
 
   /* 페이지 머리에 놓는 브랜드 표기 */
   function brandMark() {
-    return '<p class="brand-hero" translate="no">' +
-      '<span aria-hidden="true"></span>Hello Jinho!</p>';
+    return '<p class="brand-hero" translate="no">Hello Jinho!</p>';
   }
 
   function foot(source) {
