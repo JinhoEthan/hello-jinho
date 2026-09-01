@@ -255,7 +255,13 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   position:relative;display:inline-flex;width:88px;    /* 폭을 하나로 통일 */
   background:var(--surface-1);border:1px solid var(--hairline);
   border-radius:var(--r-md);
+  /* 옆으로 끌면 순서 바꾸기, 위아래로 쓸면 화면 스크롤 */
+  touch-action:pan-y;
 }
+.mark-item.is-dragging{
+  opacity:.55;border-color:var(--primary-focus);cursor:grabbing;
+}
+.mark-item.is-dragging *{pointer-events:none}
 .mark-item:hover{background:var(--surface-2);border-color:var(--hairline-strong)}
 .mark-item > a{
   display:flex;align-items:center;gap:6px;flex:1;min-width:0;
@@ -307,6 +313,8 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .mark-form .n{flex:0 1 120px}
 .mark-form .u{flex:1 1 200px;min-width:0}
 .mark-form .add-hint{flex:1 0 100%;margin-top:2px}
+.mark-move{display:flex;gap:var(--sp-xs)}
+.mark-move .btn{font-size:13px;padding:8px 10px}
 
 /* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다 */
 .rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-xl)}
