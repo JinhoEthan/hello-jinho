@@ -348,6 +348,22 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 }
 .rail-wx .cond{font-size:12px;color:var(--ink-tertiary);margin-top:3px;overflow-wrap:anywhere}
 .rail-row.is-ref .rail-name,.rail-row.is-ref .rail-off{color:var(--primary)}
+
+/* 도시 줄: 옆으로 끌면 순서 바꾸기, 위아래로 쓸면 화면 스크롤 */
+.rail-row{touch-action:pan-y}
+.rail-row.is-dragging{opacity:.55;background:var(--surface-2)}
+.rail-row.is-dragging *{pointer-events:none}
+
+.rail-tools{display:flex;align-items:flex-start;gap:2px;flex:none}
+.rail-tools button{
+  width:26px;height:26px;padding:0;border:none;background:none;color:var(--ink-tertiary);
+  border-radius:var(--r-sm);cursor:pointer;opacity:0;transition:opacity .15s ease;
+  display:grid;place-items:center;
+}
+.rail-row:hover .rail-tools button,.rail-tools button:focus-visible{opacity:1}
+.rail-tools button:hover:not(:disabled){color:var(--ink);background:var(--surface-3)}
+.rail-tools button:disabled{color:#2c2f34;cursor:default}
+
 .rail-row .rail-remove{
   width:26px;height:26px;border:none;background:none;color:var(--ink-tertiary);
   border-radius:var(--r-sm);cursor:pointer;opacity:0;transition:opacity .15s ease;
@@ -521,6 +537,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   .rail-wx .cond{margin-top:0}
   /* 기본 규칙이 .rail-row .rail-remove 라 선택자를 같은 무게로 맞춰야 이긴다 */
   .rail-row .rail-remove{opacity:1;width:40px;height:40px}
+  .rail-tools button{opacity:1;width:36px;height:36px}
   .shift-reset{min-height:40px;display:inline-flex;align-items:center}
   .nav-links a{padding:10px 0}
   /* 폭이 좁으면 바로가기를 두 칸으로 넓혀 편집·삭제 버튼이 이름을 가리지 않게 한다 */
@@ -533,6 +550,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   .mark-tools button{width:34px;height:34px}
   .mark-item > a{padding-right:74px}
   .rail-row .rail-remove{opacity:1;width:40px;height:40px}
+  .rail-tools button{opacity:1;width:36px;height:36px}
   .fx-card .rail-remove{opacity:1;width:36px;height:36px}
 }
 @media (pointer: coarse){

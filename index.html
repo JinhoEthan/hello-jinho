@@ -133,6 +133,8 @@
 
   /* 도시별 날씨 캐시: { 도시: {temp, code, isDay} } */
   var wx = {};
+  /* 도시를 끌고 있는 중인지 (아래 순서 바꾸기에서 씀) */
+  var cdrag = null;
 
   /* ---------- 렌더 ----------
      구조를 만드는 buildRail 과 1초마다 도는 updateTimes 를 나눈다.
@@ -153,10 +155,12 @@
   }
 
   function buildRail() {
+    /* 끌고 있는 도중에 날씨 갱신이 목록을 다시 그리면 손에서 놓친다 */
+    if (cdrag && cdrag.moved) return;
     $('rail').innerHTML = cities.map(function (city, idx) {
       var isRef = idx === 0;
       return '<div class="rail-row' + (isRef ? ' is-ref' : '') +
-             '" data-city="' + M.escapeHtml(city) + '">' +
+             '" data-city="' + M.escapeHtml(city) + '" data-idx="' + idx + '">' +
         '<div class="rail-head">' +
           '<div>' +
             '<div class="rail-name">' + M.escapeHtml(city) + '</div>' +
@@ -168,8 +172,17 @@
             '<div class="rail-day"></div>' +
           '</div>' +
           (cities.length > 1
-            ? '<button type="button" class="rail-remove" data-remove="' + M.escapeHtml(city) +
-              '" aria-label="' + M.escapeHtml(city) + ' 삭제">' + M.icon('close', 15) + '</button>'
+            ? '<span class="rail-tools">' +
+                '<button type="button" data-cmove="-1" ' + (idx === 0 ? 'disabled ' : '') +
+                  'aria-label="' + M.escapeHtml(city) + ' 앞으로 옮기기">' +
+                  M.icon('left', 13) + '</button>' +
+                '<button type="button" data-cmove="1" ' +
+                  (idx === cities.length - 1 ? 'disabled ' : '') +
+                  'aria-label="' + M.escapeHtml(city) + ' 뒤로 옮기기">' +
+                  M.icon('right', 13) + '</button>' +
+                '<button type="button" class="rail-remove" data-remove="' + M.escapeHtml(city) +
+                  '" aria-label="' + M.escapeHtml(city) + ' 삭제">' + M.icon('close', 14) + '</button>' +
+              '</span>'
             : '<span></span>') +
         '</div>' +
         '<div class="band" role="img" aria-label="' + M.escapeHtml(city) + ' 낮과 밤">' +
@@ -502,6 +515,20 @@
   });
 
   $('rail').addEventListener('click', function (e) {
+    /* 순서 옮기기: 첫 자리로 오면 그 도시가 기준 도시가 된다 */
+    var mv = e.target.closest('[data-cmove]');
+    if (mv) {
+      var row = mv.closest('.rail-row');
+      var from = cities.indexOf(row.getAttribute('data-city'));
+      var to = from + parseInt(mv.getAttribute('data-cmove'), 10);
+      if (from < 0 || to < 0 || to >= cities.length) return;
+      cities.splice(to, 0, cities.splice(from, 1)[0]);
+      M.save('cities', cities);
+      buildRail();
+      renderHero();
+      return;
+    }
+
     var btn = e.target.closest('[data-remove]');
     if (!btn) return;
     var name = btn.getAttribute('data-remove');
@@ -513,6 +540,49 @@
     renderHero();
     if (wasRef) loadWeather();
   });
+
+  /* ---------- 도시 끌어서 순서 바꾸기 ---------- */
+  $('rail').addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.target.closest('.rail-tools')) return;
+    var row = e.target.closest('.rail-row');
+    if (!row || cities.length < 2) return;
+    cdrag = { el: row, x: e.clientX, y: e.clientY, moved: false, id: e.pointerId };
+  });
+
+  document.addEventListener('pointermove', function (e) {
+    if (!cdrag || e.pointerId !== cdrag.id) return;
+    if (!cdrag.moved) {
+      if (Math.abs(e.clientX - cdrag.x) + Math.abs(e.clientY - cdrag.y) < 6) return;
+      cdrag.moved = true;
+      cdrag.el.classList.add('is-dragging');
+      try { cdrag.el.setPointerCapture(cdrag.id); } catch (err) {}
+    }
+    var under = document.elementFromPoint(e.clientX, e.clientY);
+    var over = under && under.closest ? under.closest('.rail-row') : null;
+    if (!over || over === cdrag.el || over.parentNode !== cdrag.el.parentNode) return;
+    var list = Array.prototype.slice.call($('rail').children);
+    var before = list.indexOf(over) < list.indexOf(cdrag.el);
+    over.parentNode.insertBefore(cdrag.el, before ? over : over.nextSibling);
+  });
+
+  function endCityDrag() {
+    if (!cdrag) return;
+    var d = cdrag; cdrag = null;
+    d.el.classList.remove('is-dragging');
+    if (!d.moved) return;
+    var order = Array.prototype.map.call($('rail').children, function (el) {
+      return el.getAttribute('data-city');
+    }).filter(function (c) { return M.CITIES[c]; });
+    if (order.length === cities.length) {
+      cities = order;
+      M.save('cities', cities);
+    }
+    buildRail();
+    renderHero();
+  }
+  document.addEventListener('pointerup', endCityDrag);
+  document.addEventListener('pointercancel', endCityDrag);
 
   $('copyUrl').addEventListener('click', function () {
     var url = location.origin + location.pathname + '?c=' + encodeURIComponent(cities.join(','));
