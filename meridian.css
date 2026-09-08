@@ -87,6 +87,9 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   max-width:1280px;margin:0 auto;
   padding-inline:max(var(--sp-xl), env(safe-area-inset-left), env(safe-area-inset-right));
 }
+/* 넓은 화면에서는 폭을 더 써서 도시 목록이 아래로 길어지지 않게 한다.
+   DESIGN.md 는 1280 을 권하지만 여기서는 한 화면에 담는 게 우선이다. */
+@media (min-width:1500px){ .wrap{max-width:1600px} }
 
 /* 화면에서는 숨기고 보조기기에는 읽히는 제목 */
 .sr-only{
@@ -113,7 +116,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 /* 브랜드: 내비게이션이 아니라 각 페이지 머리에 놓는다 */
 .brand-hero{
   font-size:34px;font-weight:600;line-height:1.15;letter-spacing:-1px;color:var(--ink);
-  margin-bottom:var(--sp-lg);
+  margin-bottom:var(--sp-sm);
 }
 .nav-links{display:flex;gap:var(--sp-lg)}
 .nav-links a{color:var(--ink-subtle);text-decoration:none;padding:4px 0}
@@ -188,7 +191,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 
 /* ---------- footer ---------- */
 .foot{
-  border-top:1px solid var(--hairline);padding:var(--sp-xxl) 0;
+  border-top:1px solid var(--hairline);padding:20px 0;
   display:flex;gap:var(--sp-lg);flex-wrap:wrap;align-items:center;
   color:var(--ink-subtle);font-size:12px;
 }
@@ -212,21 +215,21 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 /* =========================================================
    world time
    ========================================================= */
-.hero{padding:var(--sp-xxl) 0 var(--sp-section)}
+.hero{padding:var(--sp-xl) 0 var(--sp-lg)}
 /* 시계 띠: 왼쪽 시각, 오른쪽 시간 이동. 아래로 도시 패널이 폭 전체를 쓴다. */
 .clockbar{
   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:var(--sp-xxl);align-items:end;padding-bottom:var(--sp-xl);
+  gap:var(--sp-xxl);align-items:end;padding-bottom:var(--sp-md);
 }
 .clockbar > section{min-width:0}
 
 .ref-city{font-size:15px;font-weight:500;color:var(--ink-subtle);margin-bottom:var(--sp-sm)}
 .clock{
   font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums;
-  font-size:clamp(60px,8.5vw,104px);line-height:1;letter-spacing:-.05em;margin:0;
+  font-size:clamp(56px,7vw,88px);line-height:1;letter-spacing:-.05em;margin:0;
 }
 .clock .sec{font-size:.36em;letter-spacing:-.02em;color:var(--ink-subtle);margin-left:.12em}
-.hero-meta{margin-top:var(--sp-lg);display:flex;gap:var(--sp-md);align-items:center;flex-wrap:wrap}
+.hero-meta{margin-top:var(--sp-sm);display:flex;gap:var(--sp-md);align-items:center;flex-wrap:wrap}
 .hero-meta .date{font-size:18px;color:var(--ink-muted)}
 
 .shift{padding-bottom:var(--sp-xs)}
@@ -334,14 +337,14 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .mark-move .btn{font-size:13px;padding:8px 10px}
 
 /* 도시 카드는 배경 위에 바로 올려 상자 안의 상자를 피한다 */
-.rail-panel{margin-top:var(--sp-xl)}
+.rail-panel{margin-top:0}
 .rail-panel > h2{margin-bottom:var(--sp-sm)}
 
 /* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다.
    줄을 가는 선으로만 나누면 서로 붙어 보여서, 각 도시를 한 덩어리 카드로 세운다. */
-.rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-sm)}
+.rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--sp-sm)}
 .rail-row{
-  min-width:0;padding:var(--sp-md);
+  min-width:0;padding:11px 14px;container-type:inline-size;
   background:var(--surface-2);
   border:1px solid var(--hairline);
   border-radius:var(--r-lg);
@@ -359,6 +362,15 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .rail-off{font-size:13px;color:var(--ink-subtle);margin-top:3px}
 .rail-time{font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums;text-align:right}
 .rail-day{font-size:12px;color:var(--ink-tertiary);text-align:right;margin-top:3px}
+
+/* 카드가 좁아지면 화면 폭과 무관하게 날씨를 아랫줄로 내린다.
+   열 수가 화면에 따라 달라지므로 카드 자신의 폭을 기준으로 판단해야 한다. */
+@container (max-width: 420px){
+  .rail-head{grid-template-columns:minmax(0,1fr) auto auto;row-gap:var(--sp-xs)}
+  .rail-wx{grid-row:2;grid-column:1/-1;text-align:left;display:flex;align-items:center;gap:8px}
+  .rail-wx .line{justify-content:flex-start}
+  .rail-wx .cond{margin-top:0}
+}
 
 /* 도시별 날씨: 아이콘 + 기온 한 줄, 그 아래 상태 */
 .rail-wx{text-align:right;min-width:0}
@@ -414,17 +426,17 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .rail-remove:hover{color:var(--ink);background:var(--surface-3)}
 
 /* day/night band: 24 real hour cells, sunrise/sunset derived */
-.band{display:flex;gap:2px;margin-top:var(--sp-sm)}
+.band{display:flex;gap:2px;margin-top:6px}
 .band i{flex:1;height:6px;border-radius:2px;background:#0b0c0e}
 .band i.day{background:#787f89}
 .band i.now{background:var(--primary)}
 .band-legend{
   display:flex;justify-content:space-between;margin-top:6px;
-  font-size:11px;color:var(--ink-tertiary);
+  font-size:11px;color:var(--ink-tertiary);margin-top:3px;
 }
 .band-legend .mono{font-size:11px}
 
-.add-row{display:flex;gap:var(--sp-xs);align-items:flex-start;margin-top:var(--sp-lg)}
+.add-row{display:flex;gap:var(--sp-xs);align-items:flex-start;margin-top:var(--sp-sm)}
 .add-row .input{flex:1}
 .add-hint{font-size:12px;color:var(--ink-tertiary);margin-top:var(--sp-xs)}
 
