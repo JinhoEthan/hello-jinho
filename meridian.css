@@ -117,8 +117,8 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 }
 /* 브랜드: 내비게이션이 아니라 각 페이지 머리에 놓는다 */
 .brand-hero{
-  font-size:28px;font-weight:600;line-height:1.15;letter-spacing:-.8px;color:var(--ink);
-  margin-bottom:var(--sp-xs);
+  font-size:34px;font-weight:600;line-height:1.15;letter-spacing:-1px;color:var(--ink);
+  margin-bottom:4px;
 }
 .nav-links{display:flex;gap:var(--sp-lg)}
 .nav-links a{color:var(--ink-subtle);text-decoration:none;padding:4px 0}
@@ -225,14 +225,14 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 }
 .clockbar > section{min-width:0}
 
-.ref-city{font-size:15px;font-weight:500;color:var(--ink-subtle);margin-bottom:var(--sp-sm)}
+.ref-city{font-size:16px;font-weight:500;color:var(--ink-subtle);margin-bottom:var(--sp-sm)}
 .clock{
   font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums;
-  font-size:clamp(50px,5.2vw,66px);line-height:1;letter-spacing:-.045em;margin:0;
+  font-size:clamp(52px,6.1vw,92px);line-height:1;letter-spacing:-.05em;margin:0;
 }
 .clock .sec{font-size:.36em;letter-spacing:-.02em;color:var(--ink-subtle);margin-left:.12em}
-.hero-meta{margin-top:var(--sp-xs);display:flex;gap:var(--sp-md);align-items:center;flex-wrap:wrap}
-.hero-meta .date{font-size:18px;color:var(--ink-muted)}
+.hero-meta{margin-top:5px;display:flex;gap:var(--sp-md);align-items:center;flex-wrap:wrap}
+.hero-meta .date{font-size:19px;color:var(--ink-muted)}
 
 .shift{padding-bottom:var(--sp-xs)}
 .shift-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-md)}
