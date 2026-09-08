@@ -117,8 +117,8 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 }
 /* 브랜드: 내비게이션이 아니라 각 페이지 머리에 놓는다 */
 .brand-hero{
-  font-size:34px;font-weight:600;line-height:1.15;letter-spacing:-1px;color:var(--ink);
-  margin-bottom:var(--sp-sm);
+  font-size:28px;font-weight:600;line-height:1.15;letter-spacing:-.8px;color:var(--ink);
+  margin-bottom:var(--sp-xs);
 }
 .nav-links{display:flex;gap:var(--sp-lg)}
 .nav-links a{color:var(--ink-subtle);text-decoration:none;padding:4px 0}
@@ -193,7 +193,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 
 /* ---------- footer ---------- */
 .foot{
-  border-top:1px solid var(--hairline);padding:20px 0;
+  border-top:1px solid var(--hairline);padding:9px 0;
   display:flex;gap:var(--sp-lg);flex-wrap:wrap;align-items:center;
   color:var(--ink-subtle);font-size:12px;
 }
@@ -217,21 +217,21 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 /* =========================================================
    world time
    ========================================================= */
-.hero{padding:var(--sp-xl) 0 var(--sp-lg)}
+.hero{padding:var(--sp-lg) 0 var(--sp-sm)}
 /* 시계 띠: 왼쪽 시각, 오른쪽 시간 이동. 아래로 도시 패널이 폭 전체를 쓴다. */
 .clockbar{
   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:var(--sp-xxl);align-items:end;padding-bottom:var(--sp-md);
+  gap:var(--sp-xxl);align-items:end;padding-bottom:var(--sp-xs);
 }
 .clockbar > section{min-width:0}
 
 .ref-city{font-size:15px;font-weight:500;color:var(--ink-subtle);margin-bottom:var(--sp-sm)}
 .clock{
   font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums;
-  font-size:clamp(56px,7vw,88px);line-height:1;letter-spacing:-.05em;margin:0;
+  font-size:clamp(50px,5.2vw,66px);line-height:1;letter-spacing:-.045em;margin:0;
 }
 .clock .sec{font-size:.36em;letter-spacing:-.02em;color:var(--ink-subtle);margin-left:.12em}
-.hero-meta{margin-top:var(--sp-sm);display:flex;gap:var(--sp-md);align-items:center;flex-wrap:wrap}
+.hero-meta{margin-top:var(--sp-xs);display:flex;gap:var(--sp-md);align-items:center;flex-wrap:wrap}
 .hero-meta .date{font-size:18px;color:var(--ink-muted)}
 
 .shift{padding-bottom:var(--sp-xs)}
@@ -239,7 +239,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .shift-head h2{font-size:14px;font-weight:500;color:var(--ink-subtle)}
 /* 한글이 섞이므로 본문 글꼴을 쓴다. mono 는 한글 글리프가 없어 자간이 벌어진다. */
 .shift-val{
-  display:block;font-size:26px;font-weight:500;line-height:1.25;letter-spacing:-.5px;
+  display:block;font-size:22px;font-weight:500;line-height:1.25;letter-spacing:-.4px;
   font-variant-numeric:tabular-nums;color:var(--ink-subtle);margin-top:var(--sp-xs);
 }
 .shift-val.moved{color:var(--primary)}
@@ -250,7 +250,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .shift-reset:hover:not([disabled]){background:var(--surface-1)}
 .shift-reset[disabled]{color:var(--ink-tertiary);cursor:default}
 
-.slider{position:relative;margin-top:var(--sp-md);padding:6px 0}
+.slider{position:relative;margin-top:var(--sp-sm);padding:2px 0}
 .slider input[type=range]{
   -webkit-appearance:none;appearance:none;width:100%;height:32px;
   background:transparent;cursor:pointer;display:block;margin:0;
@@ -265,12 +265,12 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   width:14px;height:14px;border-radius:var(--r-pill);background:var(--primary);border:none;
 }
 .slider-ticks{
-  display:flex;justify-content:space-between;margin-top:var(--sp-xs);
+  display:flex;justify-content:space-between;margin-top:5px;
   font-family:var(--mono);font-size:11px;color:var(--ink-tertiary);
 }
 
 /* ---------- 바로가기 (크롬 북마크바 자리) ---------- */
-.marks{margin-top:var(--sp-lg)}
+.marks{margin-top:var(--sp-sm)}
 .marks-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .mark-item{
   position:relative;display:inline-flex;width:88px;    /* 폭을 하나로 통일 */
@@ -338,15 +338,37 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .mark-move{display:flex;gap:var(--sp-xs)}
 .mark-move .btn{font-size:13px;padding:8px 10px}
 
+/* 대륙 제목: 그룹마다 한 줄을 쓰므로 최대한 낮게 잡는다 */
+.rail-group{
+  grid-column:1/-1;display:flex;align-items:baseline;gap:7px;
+  font-size:11.5px;font-weight:600;letter-spacing:.4px;
+  color:var(--ink-subtle);margin:2px 0 -5px;
+}
+.rail-group:first-child{margin-top:0}
+.rail-group span{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--ink-tertiary)}
+
+/* 보기 전환 */
+.rail-headrow{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);margin-bottom:5px}
+.rail-toggle{
+  display:flex;gap:2px;background:var(--surface-1);
+  border:1px solid var(--hairline);border-radius:var(--r-md);padding:2px;
+}
+.rail-toggle button{
+  font-size:12px;padding:4px 10px;min-height:26px;border:none;border-radius:var(--r-sm);
+  background:none;color:var(--ink-subtle);cursor:pointer;
+}
+.rail-toggle button:hover{color:var(--ink)}
+.rail-toggle button[aria-pressed="true"]{background:var(--surface-3);color:var(--ink)}
+
 /* 도시 카드는 배경 위에 바로 올려 상자 안의 상자를 피한다 */
 .rail-panel{margin-top:0}
 .rail-panel > h2{margin-bottom:var(--sp-sm)}
 
 /* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다.
    줄을 가는 선으로만 나누면 서로 붙어 보여서, 각 도시를 한 덩어리 카드로 세운다. */
-.rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--sp-sm)}
+.rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:8px}
 .rail-row{
-  min-width:0;padding:11px 14px;container-type:inline-size;
+  min-width:0;padding:9px 14px;container-type:inline-size;
   background:var(--surface-2);
   border:1px solid var(--hairline);
   border-radius:var(--r-lg);
@@ -428,17 +450,17 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .rail-remove:hover{color:var(--ink);background:var(--surface-3)}
 
 /* day/night band: 24 real hour cells, sunrise/sunset derived */
-.band{display:flex;gap:2px;margin-top:6px}
+.band{display:flex;gap:2px;margin-top:5px}
 .band i{flex:1;height:6px;border-radius:2px;background:#0b0c0e}
 .band i.day{background:#787f89}
 .band i.now{background:var(--primary)}
 .band-legend{
   display:flex;justify-content:space-between;margin-top:6px;
-  font-size:11px;color:var(--ink-tertiary);margin-top:3px;
+  font-size:11px;color:var(--ink-tertiary);margin-top:2px;
 }
 .band-legend .mono{font-size:11px}
 
-.add-row{display:flex;gap:var(--sp-xs);align-items:flex-start;margin-top:var(--sp-sm)}
+.add-row{display:flex;gap:var(--sp-xs);align-items:flex-start;margin-top:var(--sp-xs)}
 .add-row .input{flex:1}
 .add-hint{font-size:12px;color:var(--ink-tertiary);margin-top:var(--sp-xs)}
 

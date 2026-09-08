@@ -74,7 +74,13 @@
      </div>
 
       <section class="rail-panel" aria-labelledby="railHeading">
-        <h2 class="t-body-sm" id="railHeading" style="margin-bottom:var(--sp-xs)">도시별 현재 시각</h2>
+        <div class="rail-headrow">
+          <h2 class="t-body-sm" id="railHeading">도시별 현재 시각</h2>
+          <div class="rail-toggle" id="railToggle" role="group" aria-label="목록 보기 방식">
+            <button type="button" data-mode="mine" aria-pressed="true">내 순서</button>
+            <button type="button" data-mode="cont" aria-pressed="false">대륙별</button>
+          </div>
+        </div>
         <div class="rail" id="rail"></div>
 
         <form class="add-row" id="addForm">
@@ -154,10 +160,18 @@
     '</div>';
   }
 
-  function buildRail() {
-    /* 끌고 있는 도중에 날씨 갱신이 목록을 다시 그리면 손에서 놓친다 */
-    if (cdrag && cdrag.moved) return;
-    $('rail').innerHTML = cities.map(function (city, idx) {
+  /* 대륙은 시간대 앞부분에서 얻는다. 따로 표를 둘 필요가 없다. */
+  var CONT = { Asia: '아시아', Europe: '유럽', America: '아메리카',
+               Africa: '아프리카', Australia: '오세아니아', Pacific: '오세아니아' };
+  var CONT_ORDER = ['아시아', '유럽', '아프리카', '아메리카', '오세아니아'];
+  function contOf(city) {
+    var meta = M.CITIES[city];
+    return meta ? (CONT[meta[0].split('/')[0]] || '기타') : '기타';
+  }
+
+  var railMode = M.load('railMode', ['mine'])[0] === 'cont' ? 'cont' : 'mine';
+
+  function cityCard(city, idx) {
       var isRef = idx === 0;
       return '<div class="rail-row' + (isRef ? ' is-ref' : '') +
              '" data-city="' + M.escapeHtml(city) + '" data-idx="' + idx + '">' +
@@ -190,24 +204,59 @@
         '</div>' +
         '<div class="band-legend"></div>' +
       '</div>';
-    }).join('');
+  }
+
+  function buildRail() {
+    /* 끌고 있는 도중에 날씨 갱신이 목록을 다시 그리면 손에서 놓친다 */
+    if (cdrag && cdrag.moved) return;
+
+    var html;
+    if (railMode === 'cont') {
+      html = '';
+      CONT_ORDER.forEach(function (cont) {
+        var list = cities.filter(function (c) { return contOf(c) === cont; });
+        if (!list.length) return;
+        html += '<h3 class="rail-group">' + cont +
+                '<span>' + list.length + '</span></h3>' +
+                list.map(function (city) {
+                  return cityCard(city, cities.indexOf(city));
+                }).join('');
+      });
+    } else {
+      html = cities.map(cityCard).join('');
+    }
+    $('rail').innerHTML = html;
+
+    Array.prototype.forEach.call($('railToggle').children, function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === railMode));
+    });
     updateTimes();
   }
+
+  $('railToggle').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mode]');
+    if (!b) return;
+    railMode = b.getAttribute('data-mode');
+    M.save('railMode', [railMode]);
+    buildRail();
+  });
 
   function updateTimes() {
     var now = shiftedNow();
     var refTz = M.CITIES[refCity()][0];
     var refP = M.tzParts(refTz, now);
 
-    Array.prototype.forEach.call($('rail').children, function (row, idx) {
+    Array.prototype.forEach.call($('rail').children, function (row) {
       var city = row.getAttribute('data-city');
       var meta = M.CITIES[city];
-      if (!meta) return;
+      if (!meta) return;                     /* 대륙 제목 줄은 건너뛴다 */
       var p = M.tzParts(meta[0], now);
       var delta = M.dayDelta(refP, p);
 
+      /* 기준 도시는 화면상의 첫 칸이 아니라 이름으로 가린다.
+         대륙별로 묶으면 제목이 첫 칸을 차지해 자리로는 판단할 수 없다. */
       row.querySelector('.rail-off').textContent =
-        idx === 0 ? '기준' : M.formatOffset(M.offsetMinutes(refTz, meta[0], now));
+        city === cities[0] ? '기준' : M.formatOffset(M.offsetMinutes(refTz, meta[0], now));
       row.querySelector('.rail-time').textContent = M.pad2(p.hour) + ':' + M.pad2(p.minute);
       row.querySelector('.rail-day').textContent =
         delta === 0 ? '오늘' : delta > 0 ? '내일' : '어제';
