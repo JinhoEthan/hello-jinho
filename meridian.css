@@ -5,7 +5,10 @@
 :root{
   /* colors */
   --primary:#5e6ad2; --on-primary:#ffffff; --primary-hover:#828fff; --primary-focus:#5e69d1;
-  --ink:#f7f8f8; --ink-muted:#d0d6e0; --ink-subtle:#8a8f98; --ink-tertiary:#62666d;
+  --ink:#f7f8f8; --ink-muted:#d0d6e0; --ink-subtle:#8a8f98;
+  /* DESIGN.md 값은 #62666d 이지만 카드를 밝게 올리면서 대비가 3.17 로 떨어졌다.
+     여기에 날씨 상태·일출일몰 같은 작은 글씨가 쓰여 4.5 를 넘도록 올렸다. */
+  --ink-tertiary:#7e8289;
   --canvas:#010102; --surface-1:#0f1011; --surface-2:#141516; --surface-3:#18191a;
   --hairline:#23252a; --hairline-strong:#34343a; --hairline-tertiary:#3e3e44;
 
@@ -15,6 +18,19 @@
   --wx-sun:#E9A83A; --wx-partly:#C9A25E; --wx-moon:#93A2B8;
   --wx-cloud:#8B94A2; --wx-rain:#5AA3E0; --wx-snow:#9CC4E6;
   --wx-storm:#D98C3A; --wx-mist:#7E8894;
+
+  /* 입체감. 거의 검정인 캔버스에서는 검은 그림자가 보이지 않으므로
+     '면을 밝게 올리는 것'이 주 수단이고, 그림자는 바닥에서 살짝 띄우는 보조다.
+     윗변의 옅은 흰 선이 카드의 모서리를 잡아 준다. */
+  --lift-1:
+    0 1px 2px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.035);
+  --lift-2:
+    0 4px 10px -2px rgba(0,0,0,.65),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  --lift-3:
+    0 10px 24px -6px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.07);
 
   /* radius */
   --r-xs:4px; --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-pill:9999px;
@@ -253,16 +269,17 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .marks-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .mark-item{
   position:relative;display:inline-flex;width:88px;    /* 폭을 하나로 통일 */
-  background:var(--surface-1);border:1px solid var(--hairline);
-  border-radius:var(--r-md);
+  background:var(--surface-2);border:1px solid var(--hairline);
+  border-radius:var(--r-md);box-shadow:var(--lift-1);
+  transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease;
   /* 옆으로 끌면 순서 바꾸기, 위아래로 쓸면 화면 스크롤 */
   touch-action:pan-y;
 }
 .mark-item.is-dragging{
-  opacity:.55;border-color:var(--primary-focus);cursor:grabbing;
+  border-color:var(--primary-focus);box-shadow:var(--lift-3);cursor:grabbing;
 }
 .mark-item.is-dragging *{pointer-events:none}
-.mark-item:hover{background:var(--surface-2);border-color:var(--hairline-strong)}
+.mark-item:hover{background:var(--surface-3);border-color:var(--hairline-strong);box-shadow:var(--lift-2)}
 .mark-item > a{
   display:flex;align-items:center;gap:6px;flex:1;min-width:0;
   padding:0 9px;min-height:32px;border-radius:var(--r-md);
@@ -316,10 +333,24 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .mark-move{display:flex;gap:var(--sp-xs)}
 .mark-move .btn{font-size:13px;padding:8px 10px}
 
-/* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다 */
-.rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-xl)}
-.rail-row{padding:var(--sp-md) 0;border-bottom:1px solid var(--hairline);min-width:0}
-.rail-row:nth-child(-n+2){padding-top:var(--sp-xxs)}
+/* 도시 카드는 배경 위에 바로 올려 상자 안의 상자를 피한다 */
+.rail-panel{margin-top:var(--sp-xl)}
+.rail-panel > h2{margin-bottom:var(--sp-sm)}
+
+/* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다.
+   줄을 가는 선으로만 나누면 서로 붙어 보여서, 각 도시를 한 덩어리 카드로 세운다. */
+.rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-sm)}
+.rail-row{
+  min-width:0;padding:var(--sp-md);
+  background:var(--surface-2);
+  border:1px solid var(--hairline);
+  border-radius:var(--r-lg);
+  box-shadow:var(--lift-1);
+  transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+.rail-row:hover{
+  background:var(--surface-3);border-color:var(--hairline-strong);box-shadow:var(--lift-2);
+}
 .rail-head{
   display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;
   gap:var(--sp-md);align-items:start;
@@ -347,11 +378,21 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
   font-family:var(--mono);font-size:18px;font-variant-numeric:tabular-nums;color:var(--ink-muted);
 }
 .rail-wx .cond{font-size:12px;color:var(--ink-tertiary);margin-top:3px;overflow-wrap:anywhere}
+/* 기준 도시는 왼쪽 액센트 띠로 한눈에 구분한다 */
+.rail-row.is-ref{
+  border-color:#2f3358;
+  box-shadow:var(--lift-1), inset 3px 0 0 var(--primary);
+  padding-left:calc(var(--sp-md) + 3px);
+}
+.rail-row.is-ref:hover{box-shadow:var(--lift-2), inset 3px 0 0 var(--primary)}
 .rail-row.is-ref .rail-name,.rail-row.is-ref .rail-off{color:var(--primary)}
 
 /* 도시 줄: 옆으로 끌면 순서 바꾸기, 위아래로 쓸면 화면 스크롤 */
 .rail-row{touch-action:pan-y}
-.rail-row.is-dragging{opacity:.55;background:var(--surface-2)}
+.rail-row.is-dragging{
+  opacity:.9;border-color:var(--primary-focus);
+  box-shadow:var(--lift-3);transform:scale(.99);
+}
 .rail-row.is-dragging *{pointer-events:none}
 
 .rail-tools{display:flex;align-items:flex-start;gap:2px;flex:none}
@@ -374,8 +415,8 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 
 /* day/night band: 24 real hour cells, sunrise/sunset derived */
 .band{display:flex;gap:2px;margin-top:var(--sp-sm)}
-.band i{flex:1;height:6px;border-radius:2px;background:#191b1f}
-.band i.day{background:#6b7078}
+.band i{flex:1;height:6px;border-radius:2px;background:#0b0c0e}
+.band i.day{background:#787f89}
 .band i.now{background:var(--primary)}
 .band-legend{
   display:flex;justify-content:space-between;margin-top:6px;
@@ -474,7 +515,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .fx-rate{margin-top:var(--sp-lg);font-size:15px;color:var(--ink-muted)}
 .fx-rate b{font-family:var(--mono);font-weight:500;color:var(--ink)}
 
-.trend{background:var(--surface-1);border:1px solid var(--hairline);border-radius:var(--r-xl);padding:var(--sp-lg)}
+.trend{background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--r-xl);padding:var(--sp-lg);box-shadow:var(--lift-1)}
 .trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--sp-md)}
 .trend-head h2{font-size:14px;font-weight:500;color:var(--ink-subtle)}
 .trend-now{font-family:var(--mono);font-size:22px}
@@ -483,7 +524,12 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 .trend-axis{display:flex;justify-content:space-between;margin-top:var(--sp-xs);font-family:var(--mono);font-size:11px;color:var(--ink-tertiary)}
 
 .fx-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-md)}
-.fx-card{position:relative;background:var(--surface-1);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:var(--sp-lg)}
+.fx-card{
+  position:relative;background:var(--surface-2);border:1px solid var(--hairline);
+  border-radius:var(--r-lg);padding:var(--sp-lg);box-shadow:var(--lift-1);
+  transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+.fx-card:hover{background:var(--surface-3);border-color:var(--hairline-strong);box-shadow:var(--lift-2)}
 .fx-card .top{display:flex;justify-content:space-between;align-items:baseline;gap:var(--sp-xs)}
 .fx-card .code{font-family:var(--mono);font-size:14px;color:var(--ink-subtle)}
 .fx-card .delta{font-family:var(--mono);font-size:13px;color:var(--ink-subtle)}
@@ -506,9 +552,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 @media (max-width:860px){
   .clockbar,.fx-split{grid-template-columns:1fr;gap:var(--sp-xl)}
   .clockbar{align-items:start}
-  .rail{grid-template-columns:1fr;column-gap:0}
-  .rail-row:nth-child(-n+2){padding-top:var(--sp-md)}
-  .rail-row:first-child{padding-top:var(--sp-xxs)}
+  .rail{grid-template-columns:1fr}
   .fx-split{align-items:stretch}
 }
 @media (max-width:768px){
