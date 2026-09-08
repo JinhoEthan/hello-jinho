@@ -77,8 +77,8 @@
         <div class="rail-headrow">
           <h2 class="t-body-sm" id="railHeading">도시별 현재 시각</h2>
           <div class="rail-toggle" id="railToggle" role="group" aria-label="목록 보기 방식">
-            <button type="button" data-mode="mine" aria-pressed="true">내 순서</button>
-            <button type="button" data-mode="cont" aria-pressed="false">대륙별</button>
+            <button type="button" data-mode="mine" aria-pressed="false">내 순서</button>
+            <button type="button" data-mode="cont" aria-pressed="true">대륙별</button>
           </div>
         </div>
         <div class="rail" id="rail"></div>
@@ -169,7 +169,7 @@
     return meta ? (CONT[meta[0].split('/')[0]] || '기타') : '기타';
   }
 
-  var railMode = M.load('railMode', ['mine'])[0] === 'cont' ? 'cont' : 'mine';
+  var railMode = M.load('railMode', ['cont'])[0] === 'mine' ? 'mine' : 'cont';
 
   function cityCard(city, idx) {
       var isRef = idx === 0;
