@@ -90,6 +90,8 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 /* 넓은 화면에서는 폭을 더 써서 도시 목록이 아래로 길어지지 않게 한다.
    DESIGN.md 는 1280 을 권하지만 여기서는 한 화면에 담는 게 우선이다. */
 @media (min-width:1500px){ .wrap{max-width:1600px} }
+/* 1920 화면에서는 5열이 되어 도시 열 개까지 두 줄에 담긴다 */
+@media (min-width:1820px){ .wrap{max-width:1760px} }
 
 /* 화면에서는 숨기고 보조기기에는 읽히는 제목 */
 .sr-only{
@@ -342,7 +344,7 @@ h1,h2,h3,section[id],[id]{scroll-margin-top:72px}
 
 /* city rail: 두 열로 깔아 패널이 세로로 길어지지 않게 한다.
    줄을 가는 선으로만 나누면 서로 붙어 보여서, 각 도시를 한 덩어리 카드로 세운다. */
-.rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--sp-sm)}
+.rail{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--sp-sm)}
 .rail-row{
   min-width:0;padding:11px 14px;container-type:inline-size;
   background:var(--surface-2);
